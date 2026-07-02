@@ -1,0 +1,29 @@
+# Node Modules
+node_modules/
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Build folders
+dist/
+build/
+
+# Coverage
+coverage/
+
+# VS Code
+.vscode/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Prisma
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
