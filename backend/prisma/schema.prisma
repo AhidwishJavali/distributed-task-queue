@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum JobPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model User {
+  id       String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
+
+  jobs Job[]
+
+  createdAt DateTime @default(now())
+}
+
+model Job {
+  id String @id @default(cuid())
+
+  title String
+
+  payload Json?
+
+  status JobStatus @default(PENDING)
+
+  priority JobPriority @default(MEDIUM)
+
+  createdAt DateTime @default(now())
+
+  startedAt DateTime?
+
+  completedAt DateTime?
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id])
+}
