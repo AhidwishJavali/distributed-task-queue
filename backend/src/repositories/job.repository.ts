@@ -39,5 +39,26 @@ async delete(id: string) {
         },
     });
 }
+async deleteAll(){
+    return prisma.job.deleteMany();
+}
+async updateStatus(
+  id: string,
+  status: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED"
+) {
+  return prisma.job.update({
+    where: { id },
+    data: {
+      status,
+      startedAt: status === "RUNNING" ? new Date() : undefined,
+      completedAt:
+        status === "COMPLETED" || status === "FAILED"
+          ? new Date()
+          : undefined,
+    },
+  });
+}
+
+
 }
 export default new JobRepository();

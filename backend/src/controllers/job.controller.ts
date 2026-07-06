@@ -146,6 +146,24 @@ async deleteJob(req: Request<JobParams>, res: Response) {
         });
     }
 }
+async deleteAllJobs(req: Request, res: Response) {
+    try {    
+
+        await jobService.deleteAllJobs();    
+
+        return res.status(200).json({
+            success: true,
+            message: "All jobs deleted successfully",
+        });
+
+    } catch (error: any) {            
+        return res.status(400).json({
+            success: false,
+            message: error.message,
+        });
+    }
+}
+
 }
 
 export default new JobController();
