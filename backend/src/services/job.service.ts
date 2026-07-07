@@ -7,32 +7,42 @@ const priorityMap = {
     LOW: 3,
 } as const;
 class JobService {
-  async createJob(data: CreateJobDTO) {
-    //return jobRepository.create(data);
-    const job = await jobRepository.create(data);
+    private async createDatabaseJob(data: CreateJobDTO) {
+    return jobRepository.create(data);
+}
 
+private async enqueueJob(job: { id: string; priority: "LOW" | "MEDIUM" | "HIGH"; }, delay = 0) {
     await jobQueue.add(
-    "process-job",
-    {
-        jobId: job.id,
-    },
-    {
-        priority: priorityMap[data.priority],
-
-        attempts: 3,
-
-        backoff: {
-            type: "exponential",
-            delay: 2000,
+        "process-job",
+        {
+            jobId: job.id,
         },
+        {
+            priority: priorityMap[job.priority],
 
-        removeOnComplete: 50,
+            delay,
 
-        removeOnFail: 100,
-    }
-);
+            attempts: 3,
+
+            backoff: {
+                type: "exponential",
+                delay: 2000,
+            },
+
+            removeOnComplete: 50,
+
+            removeOnFail: 100,
+        }
+    );
+}
+  async createJob(data: CreateJobDTO) {
+
+    const job = await this.createDatabaseJob(data);
+
+    await this.enqueueJob(job, data.delay ?? 0);
+
     return job;
-  }
+}
   async getAllJobs() {
     return jobRepository.findAll();
 }

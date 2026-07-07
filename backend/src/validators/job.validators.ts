@@ -8,6 +8,12 @@ export const createJobSchema = z.object({
     .max(100, "Title cannot exceed 100 characters"),
 
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+
+delay: z
+    .number()
+    .int()
+    .min(0)
+    .optional(),
 });
 export const updateJobSchema = z.object({
   status: z.enum(["PENDING", "RUNNING", "COMPLETED", "FAILED"]).optional(),

@@ -1,6 +1,7 @@
 export interface CreateJobDTO {
   title: string;
   priority: "LOW" | "MEDIUM" | "HIGH";
+  delay?: number;
 }
 export interface JobParams {
     id: string;

@@ -1,6 +1,8 @@
 import { Worker } from "bullmq";
 import jobRepository from "../repositories/job.repository";
 import { delay } from "../utils/delay";
+import deadLetterQueue from "../queues/dead-letter.queue";
+import redisConfig from "../config/redis";
 const WORKER_NAME = process.env.WORKER_NAME || "Worker";
 const worker = new Worker(
   "jobs",
@@ -20,11 +22,12 @@ console.log("==============================\n");
     try {
         await jobRepository.updateStatus(jobId, "RUNNING");
 
-        const random = Math.random();
+        /*const random = Math.random();
 
         if (random < 0.5) {
             throw new Error("Random Failure");
-        }
+        }*/
+       throw new Error("Forced Failure");
 
         await job.updateProgress(10);
 await delay(1000);
@@ -49,10 +52,7 @@ await delay(1000);
     }
 },
   {
-    connection: {
-      host: "127.0.0.1",
-      port: 6379,
-    },
+   connection: redisConfig,
     concurrency: 4,
   }
 );
@@ -71,13 +71,23 @@ worker.on("failed", async (job, err) => {
     );
 
     if (job.attemptsMade >= (job.opts.attempts ?? 1)) {
-        await jobRepository.updateStatus(
-            job.data.jobId,
-            "FAILED"
-        );
 
-        console.log("💀 Job permanently failed.");
-    } else {
+    await jobRepository.updateStatus(
+        job.data.jobId,
+        "FAILED"
+    );
+
+    await deadLetterQueue.add("failed-job", {
+        jobId: job.data.jobId,
+        bullJobId: job.id,
+        title: (await jobRepository.findById(job.data.jobId))?.title,
+        priority: (await jobRepository.findById(job.data.jobId))?.priority,
+        error: err.message,
+        failedAt: new Date(),
+    });
+
+    console.log("💀 Job permanently moved to DLQ.");
+}else {
         console.log("🔄 BullMQ will retry...");
     }
 });
@@ -85,3 +95,17 @@ worker.on("progress", (job, progress) => {
     console.log(`📊 Job ${job.id}: ${progress}%`);
 });
 console.log(`🚀 ${WORKER_NAME} is running...`);
+async function shutdown(signal: string) {
+    console.log(`\n⚠️ Received ${signal}`);
+    console.log(`${WORKER_NAME} is shutting down gracefully...`);
+
+    await worker.close();
+
+    console.log(`${WORKER_NAME} disconnected from Redis.`);
+    console.log(`${WORKER_NAME} exited safely.`);
+
+    process.exit(0);
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
