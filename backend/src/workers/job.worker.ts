@@ -10,6 +10,17 @@ const worker = new Worker(
     const { jobId } = job.data;
 
 const dbJob = await jobRepository.findById(jobId);
+if (!dbJob) {
+    console.log("\n==============================");
+    console.log("⚠️ Stale Queue Job Detected");
+    console.log(`BullMQ ID   : ${job.id}`);
+    console.log(`Database ID : ${jobId}`);
+    console.log("Reason      : Database record no longer exists.");
+    console.log("Removing stale queue job...");
+    console.log("==============================\n");
+
+    return;
+}
 
 console.log("\n==============================");
 console.log(`🚀 ${WORKER_NAME} Processing New Job`);
@@ -22,34 +33,43 @@ console.log("==============================\n");
     try {
         await jobRepository.updateStatus(jobId, "RUNNING");
 
-        /*const random = Math.random();
+        const random = Math.random();
 
         if (random < 0.5) {
             throw new Error("Random Failure");
-        }*/
-       throw new Error("Forced Failure");
+        }
+       //throw new Error("Forced Failure");
 
         await job.updateProgress(10);
-await delay(1000);
+await delay(5000);
 
 await job.updateProgress(30);
-await delay(1000);
+await delay(5000);
 
 await job.updateProgress(60);
-await delay(1000);
+await delay(5000);
 
 await job.updateProgress(90);
-await delay(1000);
+await delay(5000);
 
 await job.updateProgress(100);
-await delay(1000);
+await delay(5000);
 
         await jobRepository.updateStatus(jobId, "COMPLETED");
-    } catch (error) {
+    } catch (error: any) {
 
+    if (error.code === "P2025") {
+        console.log("\n==============================");
+        console.log("⚠️ Database record disappeared while processing.");
+        console.log(`Database ID : ${jobId}`);
+        console.log("Discarding stale job.");
+        console.log("==============================\n");
 
-        throw error;
+        return;
     }
+
+    throw error;
+}
 },
   {
    connection: redisConfig,

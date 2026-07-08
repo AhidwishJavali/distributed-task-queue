@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import routes from "./routes";
+import { serverAdapter } from "./config/bullboard";
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.get("/health", (_, res) => {
     message: "Server is healthy",
   });
 });
+app.use("/admin/queues", serverAdapter.getRouter());
 
 // API routes
 app.use("/api", routes);
