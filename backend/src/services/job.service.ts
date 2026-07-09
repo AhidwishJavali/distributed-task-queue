@@ -43,20 +43,58 @@ private async enqueueJob(job: { id: string; priority: "LOW" | "MEDIUM" | "HIGH";
 
     return job;
 }
-  async getAllJobs() {
-    return jobRepository.findAll();
+async getAllJobs(
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    return jobRepository.findAllByUser(
+        userId,
+        role
+    );
 }
-async getJobById(id: string) {
-    return jobRepository.findById(id);
+async getJobById(
+    id: string,
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    return jobRepository.findByIdForUser(
+        id,
+        userId,
+        role
+    );
 }
-async updateJob(id: string, data: UpdateJobDTO) {
-    return jobRepository.update(id, data);
+async updateJob(
+    id: string,
+    userId: string,
+    role: "USER" | "ADMIN",
+    data: UpdateJobDTO
+) {
+    return jobRepository.updateForUser(
+        id,
+        userId,
+        role,
+        data
+    );
 }
-async deleteJob(id: string) {
-    return jobRepository.delete(id);
+async deleteJob(
+    id: string,
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    return jobRepository.deleteForUser(
+        id,
+        userId,
+        role
+    );
 }
-async deleteAllJobs() {
-    return jobRepository.deleteAll();
+async deleteAllJobs(
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    return jobRepository.deleteAllForUser(
+        userId,
+        role
+    );
 }
 
 }

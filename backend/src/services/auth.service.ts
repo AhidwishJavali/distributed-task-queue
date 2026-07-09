@@ -30,6 +30,7 @@ class AuthService {
             id: user.id,
             name: user.name,
             email: user.email,
+             role: user.role,
         };
     }
 
@@ -50,28 +51,30 @@ class AuthService {
         if (!validPassword) {
             throw new Error("Invalid credentials");
         }
+        const secret = process.env.JWT_SECRET;
 
+    if (!secret) {
+    throw new Error("JWT_SECRET is not configured");
+}
         const token = jwt.sign(
             {
                 id: user.id,
                 email: user.email,
+                role: user.role,
             },
-            process.env.JWT_SECRET!,
+            secret,
             {
                 expiresIn: "1d",
             }
         );
-        const secret = process.env.JWT_SECRET;
-
-if (!secret) {
-    throw new Error("JWT_SECRET is not configured");
-}
+        
         return {
             token,
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
+                 role: user.role,
             },
         };
     }

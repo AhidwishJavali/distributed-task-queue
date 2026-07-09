@@ -4,12 +4,13 @@ import { CreateJobDTO, UpdateJobDTO } from "../types/job.types";
 class JobRepository {
   async create(data: CreateJobDTO) {
     return prisma.job.create({
-      data: {
-        title: data.title,
-        priority: data.priority,
-      },
+        data: {
+            title: data.title,
+            priority: data.priority,
+            userId: data.userId,
+        },
     });
-  }
+}
   async findAll() {
     return prisma.job.findMany({
         orderBy: {
@@ -58,7 +59,101 @@ async updateStatus(
     },
   });
 }
+async findAllByUser(userId: string) {
+    return prisma.job.findMany({
+        where: {
+            userId,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+}
+async findAllByUser(
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    return prisma.job.findMany({
+        where:
+            role === "ADMIN"
+                ? {}
+                : {
+                      userId,
+                  },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+}
+async findByIdForUser(
+    id: string,
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    return prisma.job.findFirst({
+        where: {
+            id,
+            ...(role === "ADMIN" ? {} : { userId }),
+        },
+    });
+}
+async updateForUser(
+    id: string,
+    userId: string,
+    role: "USER" | "ADMIN",
+    data: UpdateJobDTO
+) {
+    const job = await this.findByIdForUser(
+        id,
+        userId,
+        role
+    );
 
+    if (!job) {
+        throw new Error("Job not found");
+    }
+
+    return prisma.job.update({
+        where: {
+            id,
+        },
+        data,
+    });
+}
+async deleteForUser(
+    id: string,
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    const job = await this.findByIdForUser(
+        id,
+        userId,
+        role
+    );
+
+    if (!job) {
+        throw new Error("Job not found");
+    }
+
+    return prisma.job.delete({
+        where: {
+            id,
+        },
+    });
+}
+async deleteAllForUser(
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    return prisma.job.deleteMany({
+        where:
+            role === "ADMIN"
+                ? {}
+                : {
+                      userId,
+                  },
+    });
+}
 
 }
 export default new JobRepository();

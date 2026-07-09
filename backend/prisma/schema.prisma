@@ -2,6 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -21,12 +26,12 @@ enum JobPriority {
 }
 
 model User {
-  id       String @id @default(cuid())
+  id       String   @id @default(cuid())
   name     String
-  email    String @unique
+  email    String   @unique
   password String
-
-  jobs Job[]
+  role     UserRole @default(USER)
+  jobs     Job[]
 
   createdAt DateTime @default(now())
 }

@@ -1,8 +1,9 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import jobService from "../services/job.service";
 import { createJobSchema } from "../validators/job.validators";
 import { CreateJobDTO,  JobParams } from "../types/job.types";
 import { updateJobSchema } from "../validators/job.validators";
+import { AuthRequest } from "../middleware/auth.middleware";
 
 class JobController {
   async createJob(req: Request, res: Response) {
@@ -10,77 +11,90 @@ class JobController {
       // Validate request body
       const validatedData = createJobSchema.parse(req.body);
 
-      // Call business logic
-      const job = await jobService.createJob(validatedData);
+     const userId = (req as AuthRequest).user.id;
+
+const job = await jobService.createJob({
+    ...validatedData,
+    userId,
+});
 
       // Send success response
-      return res.status(201).json({
+       res.status(201).json({
         success: true,
         message: "Job created successfully",
         data: job,
       });
+      return;
     } catch (error: any) {
-      // We'll improve error handling later
-      return res.status(400).json({
-        success: false,
-        message: error.message,
-      });
+      next(error);
     }
   }
-  async getAllJobs(req: Request, res: Response) {
+  async getAllJobs(req: Request, res: Response,
+    next: NextFunction) {
     try {
-        const jobs = await jobService.getAllJobs();
+        const userId = (req as AuthRequest).user.id;
 
-        return res.status(200).json({
+const { id, role } = (req as AuthRequest).user;
+
+const jobs = await jobService.getAllJobs(
+    id,
+    role
+);
+
+        res.status(200).json({
             success: true,
             count: jobs.length,
             data: jobs
         });
+        return;
 
     } catch (error: any) {
 
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        next(error);
+        return;
 
     }
 }
 async getJobById(
     req: Request<JobParams>,
-    res: Response
+    res: Response,
+    next: NextFunction
 ) {
     try {
 
         const { id } = req.params;
-
-        const job = await jobService.getJobById(id);
-
+        const user = (req as AuthRequest).user;
+        const job = await jobService.getJobById(
+    id,
+    user.id,
+    user.role
+);
         if (!job) {
-            return res.status(404).json({
+             res.status(404).json({
                 success: false,
                 message: "Job not found",
             });
+            return;
         }
 
-        return res.status(200).json({
+        res.status(200).json({
             success: true,
             data: job,
         });
+        return;
 
     } catch (error: any) {
 
-        return res.status(500).json({
-            success: false,
-            message: error.message,
-        });
+        next(error);
+        return;
 
     }
 }
-async updateJob(req: Request<JobParams>, res: Response) {
+async updateJob(req: Request<JobParams>, res: Response, next: NextFunction) {
     try {
 
         const { id } = req.params;
+        const user = (req as AuthRequest).user;
 
         const validatedData = updateJobSchema.parse(req.body);
 
@@ -95,72 +109,101 @@ async updateJob(req: Request<JobParams>, res: Response) {
                 : undefined,
         };
 
-        const job = await jobService.updateJob(id, updateData);
-
-        return res.status(200).json({
+        const job = await jobService.updateJob(
+    id,
+    user.id,
+    user.role,
+    updateData
+);
+    res.status(200).json({
             success: true,
             message: "Job updated successfully",
             data: job,
         });
+        return;
 
     } catch (error: any) {
 
         // Prisma throws if record doesn't exist
         if (error.code === "P2025") {
-            return res.status(404).json({
+             res.status(404).json({
                 success: false,
                 message: "Job not found",
             });
+            return;
         }
 
-        return res.status(400).json({
-            success: false,
-            message: error.message,
-        });
+        next(error);
     }
 }
-async deleteJob(req: Request<JobParams>, res: Response) {
+async deleteJob(req: Request<JobParams>, res: Response, next: NextFunction) {
     try {
 
         const { id } = req.params;
 
-        await jobService.deleteJob(id);
+        const user = (req as AuthRequest).user;
 
-        return res.status(200).json({
+await jobService.deleteJob(
+    id,
+    user.id,
+    user.role
+);
+
+         res.status(200).json({
             success: true,
             message: "Job deleted successfully",
         });
+        return;
 
     } catch (error: any) {
 
         if (error.code === "P2025") {
-            return res.status(404).json({
+             res.status(404).json({
                 success: false,
                 message: "Job not found",
             });
+            return;
         }
 
-        return res.status(400).json({
-            success: false,
-            message: error.message,
-        });
+        next(error);
     }
 }
-async deleteAllJobs(req: Request, res: Response) {
-    try {    
 
-        await jobService.deleteAllJobs();    
+async deleteAllJobs(req: Request, res: Response, next: NextFunction) {
+    try {
+        const user = (req as AuthRequest).user;
 
-        return res.status(200).json({
+        await jobService.deleteAllJobs(user);
+
+        res.status(200).json({
             success: true,
             message: "All jobs deleted successfully",
         });
 
-    } catch (error: any) {            
-        return res.status(400).json({
-            success: false,
-            message: error.message,
+        return;
+    } catch (error) {
+        next(error);
+    }
+}
+async deleteAllJobs(req: Request, res: Response, next: NextFunction) {
+    try {    
+
+        const user = (req as AuthRequest).user;
+
+await jobService.deleteAllJobs(
+    user.id,
+    user.role
+);    
+
+         res.status(200).json({
+            success: true,
+            message: "All jobs deleted successfully",
         });
+        return;
+
+    } catch (error: any) {            
+        next(error);
+        return;
     }
 }
 

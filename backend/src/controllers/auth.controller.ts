@@ -1,8 +1,9 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import authService from "../services/auth.service";
 
 class AuthController {
-    async register(req: Request, res: Response) {
+    async register(req: Request, res: Response,
+    next: NextFunction) {
         try {
             const user = await authService.register(req.body);
 
@@ -10,15 +11,13 @@ class AuthController {
                 success: true,
                 data: user,
             });
+            return;
         } catch (error: any) {
-            res.status(400).json({
-                success: false,
-                message: error.message,
-            });
+            next(error);
         }
     }
 
-    async login(req: Request, res: Response) {
+    async login(req: Request, res: Response, next: NextFunction) {
         try {
             const result = await authService.login(req.body);
 
@@ -26,11 +25,9 @@ class AuthController {
                 success: true,
                 data: result,
             });
+            return;
         } catch (error: any) {
-            res.status(401).json({
-                success: false,
-                message: error.message,
-            });
+            next(error);
         }
     }
 }

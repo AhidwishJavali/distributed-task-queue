@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import routes from "./routes";
+import { errorHandler } from "./middleware/error.middleware";
 import { serverAdapter } from "./config/bullboard";
 
 const app = express();
@@ -19,5 +20,7 @@ app.use("/admin/queues", serverAdapter.getRouter());
 
 // API routes
 app.use("/api", routes);
+app.use(errorHandler);
+
 
 export default app;
