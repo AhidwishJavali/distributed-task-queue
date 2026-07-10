@@ -1,16 +1,145 @@
 import { Router } from "express";
 import jobController from "../controllers/job.controller";
-import { authenticate } from "../middleware/auth.middleware";
+import { authenticate, AuthRequest } from "../middleware/auth.middleware";
 
 const router = Router();
 
 router.use(authenticate);
 
-router.get("/:id", jobController.getJobById);
-router.post("/", jobController.createJob);
-router.get("/", jobController.getAllJobs);
-router.patch("/:id", jobController.updateJob);
-router.delete("/:id", jobController.deleteJob);
-router.delete("/", jobController.deleteAllJobs);
+
+/**
+ * @swagger
+ * /jobs:
+ *   post:
+ *     summary: Create a new job
+ *     tags: [Jobs]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *               priority:
+ *                 type: string
+ *                 enum: [LOW, MEDIUM, HIGH]
+ *     responses:
+ *       201:
+ *         description: Job created successfully
+ */
+router.post("/", (req, res, next) =>
+    jobController.createJob(req as AuthRequest, res, next)
+);
+
+/**
+ * @swagger
+ * /jobs:
+ *   get:
+ *     summary: Get all jobs
+ *     tags: [Jobs]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of jobs
+ */
+router.get("/", (req, res, next) =>
+    jobController.getAllJobs(req as AuthRequest, res, next)
+);
+
+/**
+ * @swagger
+ * /jobs/{id}:
+ *   get:
+ *     summary: Get a job by ID
+ *     tags: [Jobs]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Job details
+ *       404:
+ *         description: Job not found
+ */
+router.get("/:id", (req, res, next) =>
+    jobController.getJobById(req as unknown as AuthRequest, res, next)
+);
+/**
+ * @swagger
+ * /jobs/{id}:
+ *   patch:
+ *     summary: Update a job
+ *     tags: [Jobs]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Job updated successfully
+ */
+router.patch("/:id", (req, res, next) =>
+    jobController.updateJob(req as unknown as AuthRequest, res, next)
+);
+
+/**
+ * @swagger
+ * /jobs/{id}:
+ *   delete:
+ *     summary: Delete a job
+ *     tags: [Jobs]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Job deleted successfully
+ */
+router.delete("/:id", (req, res, next) =>
+    jobController.deleteJob(req as unknown as AuthRequest, res, next)
+);
+
+/**
+ * @swagger
+ * /jobs:
+ *   delete:
+ *     summary: Delete all jobs (Admin or own jobs)
+ *     tags: [Jobs]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Jobs deleted successfully
+ */
+router.delete("/", (req, res, next) =>
+    jobController.deleteAllJobs(req as AuthRequest, res, next)
+);
 
 export default router;

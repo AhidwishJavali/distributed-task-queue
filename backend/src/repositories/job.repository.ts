@@ -59,7 +59,7 @@ async updateStatus(
     },
   });
 }
-async findAllByUser(userId: string) {
+/*async findAllByUser(userId: string) {
     return prisma.job.findMany({
         where: {
             userId,
@@ -68,7 +68,7 @@ async findAllByUser(userId: string) {
             createdAt: "desc",
         },
     });
-}
+}*/
 async findAllByUser(
     userId: string,
     role: "USER" | "ADMIN"

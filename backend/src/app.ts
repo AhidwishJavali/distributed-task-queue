@@ -3,6 +3,8 @@ import cors from "cors";
 import routes from "./routes";
 import { errorHandler } from "./middleware/error.middleware";
 import { serverAdapter } from "./config/bullboard";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./docs/swagger";
 
 const app = express();
 
@@ -17,7 +19,11 @@ app.get("/health", (_, res) => {
   });
 });
 app.use("/admin/queues", serverAdapter.getRouter());
-
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
+);
 // API routes
 app.use("/api", routes);
 app.use(errorHandler);

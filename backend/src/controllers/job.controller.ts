@@ -1,4 +1,8 @@
-import { Request, Response, NextFunction } from "express";
+import {
+    Response,
+    NextFunction,
+    RequestHandler,
+} from "express";
 import jobService from "../services/job.service";
 import { createJobSchema } from "../validators/job.validators";
 import { CreateJobDTO,  JobParams } from "../types/job.types";
@@ -6,12 +10,16 @@ import { updateJobSchema } from "../validators/job.validators";
 import { AuthRequest } from "../middleware/auth.middleware";
 
 class JobController {
-  async createJob(req: Request, res: Response) {
+  async createJob(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) {
     try {
       // Validate request body
       const validatedData = createJobSchema.parse(req.body);
 
-     const userId = (req as AuthRequest).user.id;
+    const userId = req.user.id;
 
 const job = await jobService.createJob({
     ...validatedData,
@@ -29,12 +37,15 @@ const job = await jobService.createJob({
       next(error);
     }
   }
-  async getAllJobs(req: Request, res: Response,
-    next: NextFunction) {
+  async getAllJobs(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) {
     try {
-        const userId = (req as AuthRequest).user.id;
+        
 
-const { id, role } = (req as AuthRequest).user;
+const { id, role } = req.user;
 
 const jobs = await jobService.getAllJobs(
     id,
@@ -56,14 +67,14 @@ const jobs = await jobService.getAllJobs(
     }
 }
 async getJobById(
-    req: Request<JobParams>,
+    req: AuthRequest,
     res: Response,
     next: NextFunction
 ) {
     try {
 
-        const { id } = req.params;
-        const user = (req as AuthRequest).user;
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+        const user = req.user;
         const job = await jobService.getJobById(
     id,
     user.id,
@@ -90,11 +101,15 @@ async getJobById(
 
     }
 }
-async updateJob(req: Request<JobParams>, res: Response, next: NextFunction) {
+async updateJob(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) {
     try {
 
-        const { id } = req.params;
-        const user = (req as AuthRequest).user;
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+        const user = req.user;
 
         const validatedData = updateJobSchema.parse(req.body);
 
@@ -136,12 +151,16 @@ async updateJob(req: Request<JobParams>, res: Response, next: NextFunction) {
         next(error);
     }
 }
-async deleteJob(req: Request<JobParams>, res: Response, next: NextFunction) {
+async deleteJob(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) {
     try {
 
-        const { id } = req.params;
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
-        const user = (req as AuthRequest).user;
+        const user = req.user;
 
 await jobService.deleteJob(
     id,
@@ -169,7 +188,7 @@ await jobService.deleteJob(
     }
 }
 
-async deleteAllJobs(req: Request, res: Response, next: NextFunction) {
+/*async deleteAllJobs(req: Request, res: Response, next: NextFunction) {
     try {
         const user = (req as AuthRequest).user;
 
@@ -184,11 +203,15 @@ async deleteAllJobs(req: Request, res: Response, next: NextFunction) {
     } catch (error) {
         next(error);
     }
-}
-async deleteAllJobs(req: Request, res: Response, next: NextFunction) {
+}*/
+async deleteAllJobs(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) {
     try {    
 
-        const user = (req as AuthRequest).user;
+        const user = req.user;
 
 await jobService.deleteAllJobs(
     user.id,
