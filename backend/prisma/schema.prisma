@@ -41,11 +41,15 @@ model Job {
 
   title String
 
+  description String?
+
   payload Json?
 
   status JobStatus @default(PENDING)
 
   priority JobPriority @default(MEDIUM)
+
+  delay Int @default(0)
 
   createdAt DateTime @default(now())
 

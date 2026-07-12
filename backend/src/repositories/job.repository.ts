@@ -4,11 +4,13 @@ import { CreateJobDTO, UpdateJobDTO } from "../types/job.types";
 class JobRepository {
   async create(data: CreateJobDTO) {
     return prisma.job.create({
-        data: {
-            title: data.title,
-            priority: data.priority,
-            userId: data.userId,
-        },
+       data: {
+    title: data.title,
+    description: data.description,
+    priority: data.priority,
+    delay: data.delay ?? 0,
+    userId: data.userId,
+},
     });
 }
   async findAll() {

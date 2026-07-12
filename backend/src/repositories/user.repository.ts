@@ -23,6 +23,47 @@ class UserRepository {
             },
         });
     }
+    async findAll() {
+    return prisma.user.findMany({
+        orderBy: {
+            createdAt: "desc",
+        },
+        include: {
+            _count: {
+                select: {
+                    jobs: true,
+                },
+            },
+        },
+    });
 }
+
+async findJobs(userId: string) {
+    return prisma.job.findMany({
+        where: {
+            userId,
+        },
+        orderBy: {
+            createdAt: "desc",
+        },
+    });
+}
+
+async deleteUser(userId: string) {
+    await prisma.job.deleteMany({
+        where: {
+            userId,
+        },
+    });
+
+    return prisma.user.delete({
+        where: {
+            id: userId,
+        },
+    });
+}
+}
+
+
 
 export default new UserRepository();

@@ -3,6 +3,8 @@ import api from "./api";
 export interface CreateJobData {
     title: string;
     description: string;
+    priority: "LOW" | "MEDIUM" | "HIGH";
+     delay: number;
 }
 
 export const getJobs = async () => {
@@ -21,5 +23,29 @@ export const deleteJob = async (
     id: string
 ) => {
     const response = await api.delete(`/jobs/${id}`);
+    return response.data;
+};
+
+export interface UpdateJobData {
+    title: string;
+    description: string;
+    priority: "LOW" | "MEDIUM" | "HIGH";
+     delay: number;
+}
+
+export const updateJob = async (
+    id: string,
+    data: UpdateJobData
+) => {
+    const response = await api.patch(
+        `/jobs/${id}`,
+        data
+    );
+
+    return response.data;
+};
+
+export const deleteAllJobs = async () => {
+    const response = await api.delete("/jobs");
     return response.data;
 };

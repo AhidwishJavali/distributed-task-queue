@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-
+import JobCard from "../components/JobCard";
 import {
     getJobs,
     createJob,
     deleteJob,
+    deleteAllJobs,
 } from "../services/job.service";
 interface User {
     id: string;
@@ -12,30 +13,8 @@ interface User {
     role: string;
 }
 
-interface Job {
-    id: string;
-    title: string;
-    description: string;
-    status: string;
-}
-function getStatusColor(status: string) {
-    switch (status) {
-        case "PENDING":
-            return "bg-yellow-100 text-yellow-800";
+import type { Job } from "../types/job";
 
-        case "RUNNING":
-            return "bg-blue-100 text-blue-800";
-
-        case "COMPLETED":
-            return "bg-green-100 text-green-800";
-
-        case "FAILED":
-            return "bg-red-100 text-red-800";
-
-        default:
-            return "bg-gray-100 text-gray-800";
-    }
-}
 
 export default function DashboardPage() {
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -43,6 +22,10 @@ export default function DashboardPage() {
     const [title, setTitle] = useState("");
     const [description, setDescription] =
         useState("");
+        const [priority, setPriority] = useState<
+    "LOW" | "MEDIUM" | "HIGH"
+>("MEDIUM");
+const [delay, setDelay] = useState("");
         const user: User = JSON.parse(
     localStorage.getItem("user")!
 );
@@ -84,12 +67,19 @@ export default function DashboardPage() {
         await createJob({
             title,
             description,
+            priority,
+            delay:
+    delay === ""
+        ? 0
+        : Number(delay) * 1000,
         });
 
         setTitle("");
         setDescription("");
+        setPriority("MEDIUM");
+        setDelay(0);
 
-        loadJobs();
+        await loadJobs();
 
     } finally {
         setLoading(false);
@@ -106,7 +96,29 @@ export default function DashboardPage() {
 
     await deleteJob(id);
 
-    loadJobs();
+    await loadJobs();
+}
+async function handleDeleteAll() {
+
+    const confirmed = window.confirm(
+        "Delete all jobs?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+
+        await deleteAllJobs();
+
+        await loadJobs();
+
+    } catch (err) {
+
+        console.log(err);
+
+        alert("Failed to delete jobs");
+
+    }
 }
 
     function logout() {
@@ -170,6 +182,40 @@ export default function DashboardPage() {
             setDescription(e.target.value)
         }
     />
+    <select
+    className="border rounded-lg w-full p-3 mb-4"
+    value={priority}
+    onChange={(e) =>
+        setPriority(
+            e.target.value as
+                | "LOW"
+                | "MEDIUM"
+                | "HIGH"
+        )
+    }
+>
+    <option value="LOW">
+        Low Priority
+    </option>
+
+    <option value="MEDIUM">
+        Medium Priority
+    </option>
+
+    <option value="HIGH">
+        High Priority
+    </option>
+</select>
+<input
+    type="number"
+    min={0}
+    placeholder="Delay (seconds)"
+    className="border rounded-lg w-full p-3 mb-4"
+    value={delay}
+    onChange={(e) =>
+        setDelay(e.target.value)
+    }
+/>
 
     <button
     disabled={loading}
@@ -189,9 +235,20 @@ export default function DashboardPage() {
         Jobs
     </h2>
 
-    <span className="bg-gray-200 px-4 py-2 rounded-lg font-semibold">
-        Total: {jobs.length}
-    </span>
+    <div className="flex gap-3">
+
+        <span className="bg-gray-200 px-4 py-2 rounded-lg font-semibold">
+            Total: {jobs.length}
+        </span>
+
+        <button
+            onClick={handleDeleteAll}
+            className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg"
+        >
+            Delete All
+        </button>
+
+    </div>
 
 </div>
 
@@ -203,44 +260,16 @@ export default function DashboardPage() {
     </div>
 
 ) : (
-            jobs.map((job) => (
-                <div
-    key={job.id}
-    className="bg-white rounded-xl shadow-md p-5 mb-4"
->
-                    <h3 className="text-xl font-semibold">
-    {job.title}
-</h3>
-
-
-                    <p className="text-gray-600 mt-2">
-    {job.description}
-</p>
-
-                    <div className="mt-3 flex items-center gap-2">
-
-    <span className="font-semibold">
-        Status:
-    </span>
-
-    <span
-        className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(
-            job.status
-        )}`}
-    >
-        {job.status}
-    </span>
-
-</div>
-
-                    <button
-    onClick={() => handleDelete(job.id)}
-    className="mt-4 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
->
-    🗑 Delete
-</button>
-                </div>
-            ))
+            
+     jobs.map((job) => (
+    <JobCard
+        key={job.id}
+        job={job}
+        onDelete={handleDelete}
+        onRefresh={loadJobs}
+    />
+))
+            
         )}
         </div>
         <footer className="text-center text-gray-500 mt-10 mb-5">

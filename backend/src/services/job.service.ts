@@ -69,6 +69,21 @@ async updateJob(
     role: "USER" | "ADMIN",
     data: UpdateJobDTO
 ) {
+    const job = await jobRepository.findByIdForUser(
+    id,
+    userId,
+    role
+);
+
+if (!job) {
+    throw new Error("Job not found");
+}
+
+if (job.status !== "PENDING") {
+    throw new Error(
+        "Only pending jobs can be edited."
+    );
+}
     return jobRepository.updateForUser(
         id,
         userId,
