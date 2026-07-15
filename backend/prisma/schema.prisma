@@ -60,4 +60,24 @@ model Job {
   userId String
 
   user User @relation(fields: [userId], references: [id])
+
+  image String
+
+  processingStage String @default("Queued")
+
+  progress Int @default(0)
+
+  workerName String?
+  logs       JobLog[]
+}
+
+model JobLog {
+  id String @id @default(cuid())
+
+  message String
+
+  createdAt DateTime @default(now())
+
+  jobId String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { Job } from "../types/job";
 import { updateJob } from "../services/job.service";
+import { getJobLogs } from "../services/jobLog.service";
+import type { JobLog } from "../types/jobLog";
 
 interface Props {
     job: Job;
@@ -41,6 +43,26 @@ export default function JobCard({
 );
     const [loading, setLoading] =
         useState(false);
+        const [logs, setLogs] = useState<JobLog[]>([]);
+const [showLogs, setShowLogs] = useState(false);
+const [loadingLogs, setLoadingLogs] = useState(false);
+async function handleLogs() {
+    if (showLogs) {
+        setShowLogs(false);
+        return;
+    }
+
+    setLoadingLogs(true);
+
+    try {
+        const result = await getJobLogs(job.id);
+        setLogs(result.data);
+        setShowLogs(true);
+    } finally {
+        setLoadingLogs(false);
+    }
+}
+        
 
     async function handleSave() {
         try {
@@ -50,6 +72,7 @@ export default function JobCard({
                 title,
                 description,
                 priority,
+                image: job.image,
                 delay:
     delay === ""
         ? 0
@@ -154,6 +177,11 @@ export default function JobCard({
                     <p className="text-gray-600 mt-2">
                         {job.description}
                     </p>
+                    <img
+    src={`/assets/${job.image}`}
+    alt={job.title}
+    className="w-48 h-32 object-cover rounded-lg mt-4 border"
+/>
 
                     <div className="mt-4 flex gap-3">
 
@@ -184,6 +212,36 @@ export default function JobCard({
 <p className="text-sm text-gray-500 mt-3">
    Delay: {job.delay / 1000} seconds
 </p>
+<p className="text-sm text-gray-600 mt-2">
+    <strong>Worker:</strong>{" "}
+    {job.workerName || "Waiting..."}
+</p>
+<p className="text-sm text-gray-600">
+    <strong>Stage:</strong>{" "}
+    {job.processingStage}
+</p>
+<div className="mt-3">
+
+    <div className="flex justify-between text-sm mb-1">
+
+        <span>Progress</span>
+
+        <span>{job.progress}%</span>
+
+    </div>
+
+    <div className="w-full bg-gray-200 rounded-full h-3">
+
+        <div
+            className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+            style={{
+                width: `${job.progress}%`,
+            }}
+        />
+
+    </div>
+
+</div>
 
                     <div className="flex gap-3 mt-5">
 
@@ -207,12 +265,54 @@ export default function JobCard({
                         >
                             🗑 Delete
                         </button>
+                        <button
+    onClick={handleLogs}
+    className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg"
+>
+    {loadingLogs
+        ? "Loading..."
+        : showLogs
+        ? "Hide Logs"
+        : "View Logs"}
+</button>
+</div>
+
+                        {showLogs && (
+    <div className="mt-5 border-t pt-4">
+
+        <h4 className="font-semibold mb-3">
+            Execution Logs
+        </h4>
+
+        {logs.length === 0 ? (
+            <p className="text-gray-500">
+                No logs found.
+            </p>
+        ) : (
+            logs.map((log) => (
+                <div
+                    key={log.id}
+                    className="text-sm border-l-4 border-blue-500 pl-3 mb-3"
+                >
+                    <div>{log.message}</div>
+
+                    <div className="text-gray-500 text-xs">
+                        {new Date(
+                            log.createdAt
+                        ).toLocaleString()}
+                    </div>
+                </div>
+            ))
+        )}
+
+    </div>
+)}
 {job.status !== "PENDING" && (
     <p className="text-sm text-gray-500 mt-2">
         Jobs can only be edited while pending.
     </p>
 )}
-                    </div>
+                    
                 </>
             )}
 

@@ -5,12 +5,12 @@ import { errorHandler } from "./middleware/error.middleware";
 import { serverAdapter } from "./config/bullboard";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./docs/swagger";
-
+  import dlqRoutes from "./routes/dlq.routes";
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.use("/api/dlq", dlqRoutes);
 // Health check
 app.get("/health", (_, res) => {
   res.json({

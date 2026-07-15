@@ -1,5 +1,6 @@
 import jobRepository from "../repositories/job.repository";
 import { CreateJobDTO, UpdateJobDTO } from "../types/job.types";
+import { JobQueryDTO } from "../types/job.types";
 import jobQueue from "../queues/job.queue";
 const priorityMap = {
     HIGH: 1,
@@ -45,11 +46,13 @@ private async enqueueJob(job: { id: string; priority: "LOW" | "MEDIUM" | "HIGH";
 }
 async getAllJobs(
     userId: string,
-    role: "USER" | "ADMIN"
+    role: "USER" | "ADMIN",
+    query: JobQueryDTO
 ) {
     return jobRepository.findAllByUser(
         userId,
-        role
+        role,
+        query
     );
 }
 async getJobById(

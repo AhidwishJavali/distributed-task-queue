@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "worker": "tsx watch src/workers/job.worker.ts",
+    "worker1": "cross-env WORKER_NAME=Worker-1 tsx watch src/workers/job.worker.ts",
+    "worker2": "cross-env WORKER_NAME=Worker-2 tsx watch src/workers/job.worker.ts",
+    "worker3": "cross-env WORKER_NAME=Worker-3 tsx watch src/workers/job.worker.ts",
     "dlq-worker": "tsx watch src/workers/dlq.worker.ts",
     "build": "tsc",
     "start": "node dist/server.js"
@@ -21,6 +24,7 @@
     "bcrypt": "^6.0.0",
     "bullmq": "^5.79.2",
     "cors": "^2.8.6",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "ioredis": "^5.11.1",

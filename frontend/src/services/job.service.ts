@@ -4,11 +4,24 @@ export interface CreateJobData {
     title: string;
     description: string;
     priority: "LOW" | "MEDIUM" | "HIGH";
-     delay: number;
+    delay: number;
+    image: string;
 }
 
-export const getJobs = async () => {
-    const response = await api.get("/jobs");
+export interface GetJobsParams {
+    search?: string;
+    status?: string;
+    priority?: string;
+    sort?: string;
+}
+
+export const getJobs = async (
+    params?: GetJobsParams
+) => {
+    const response = await api.get("/jobs", {
+        params,
+    });
+
     return response.data;
 };
 
@@ -30,7 +43,8 @@ export interface UpdateJobData {
     title: string;
     description: string;
     priority: "LOW" | "MEDIUM" | "HIGH";
-     delay: number;
+    delay: number;
+    image: string;
 }
 
 export const updateJob = async (

@@ -1,5 +1,5 @@
 import prisma from "../config/prisma";
-import { CreateJobDTO, UpdateJobDTO } from "../types/job.types";
+import { CreateJobDTO, UpdateJobDTO,JobQueryDTO} from "../types/job.types";
 
 class JobRepository {
   async create(data: CreateJobDTO) {
@@ -10,6 +10,7 @@ class JobRepository {
     priority: data.priority,
     delay: data.delay ?? 0,
     userId: data.userId,
+    image: data.image,
 },
     });
 }
@@ -61,6 +62,21 @@ async updateStatus(
     },
   });
 }
+async updateProcessing(
+    id: string,
+    data: {
+        processingStage?: string;
+        progress?: number;
+        workerName?: string | null;
+    }
+) {
+    return prisma.job.update({
+        where: {
+            id,
+        },
+        data,
+    });
+}
 /*async findAllByUser(userId: string) {
     return prisma.job.findMany({
         where: {
@@ -73,17 +89,40 @@ async updateStatus(
 }*/
 async findAllByUser(
     userId: string,
-    role: "USER" | "ADMIN"
+    role: "USER" | "ADMIN",
+    query: JobQueryDTO
 ) {
     return prisma.job.findMany({
-        where:
-            role === "ADMIN"
-                ? {}
-                : {
-                      userId,
-                  },
+        where: {
+            ...(role === "ADMIN" ? {} : { userId }),
+
+            ...(query.search
+                ? {
+                      title: {
+                          contains: query.search,
+                          mode: "insensitive",
+                      },
+                  }
+                : {}),
+
+            ...(query.status
+                ? {
+                      status: query.status,
+                  }
+                : {}),
+
+            ...(query.priority
+                ? {
+                      priority: query.priority,
+                  }
+                : {}),
+        },
+
         orderBy: {
-            createdAt: "desc",
+            createdAt:
+                query.sort === "oldest"
+                    ? "asc"
+                    : "desc",
         },
     });
 }
@@ -99,6 +138,7 @@ async findByIdForUser(
         },
     });
 }
+
 async updateForUser(
     id: string,
     userId: string,
@@ -154,6 +194,23 @@ async deleteAllForUser(
                 : {
                       userId,
                   },
+    });
+}
+async updateProgress(
+    id: string,
+    progress: number,
+    processingStage: string,
+    workerName: string
+) {
+    return prisma.job.update({
+        where: {
+            id,
+        },
+        data: {
+            progress,
+            processingStage,
+            workerName,
+        },
     });
 }
 

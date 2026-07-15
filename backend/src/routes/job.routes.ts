@@ -76,6 +76,12 @@ router.get("/", (req, res, next) =>
 router.get("/:id", (req, res, next) =>
     jobController.getJobById(req as unknown as AuthRequest, res, next)
 );
+
+router.get(
+    "/:id/logs",
+    authenticate,
+    (req, res, next) => jobController.getJobLogs(req as AuthRequest, res, next)
+);
 /**
  * @swagger
  * /jobs/{id}:

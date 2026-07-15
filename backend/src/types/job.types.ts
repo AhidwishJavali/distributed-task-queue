@@ -4,6 +4,7 @@ export interface CreateJobDTO {
     priority: "LOW" | "MEDIUM" | "HIGH";
     delay?: number;
     userId: string;
+    image: string;
 }
 
 export interface JobParams {
@@ -22,4 +23,16 @@ export interface UpdateJobDTO {
     completedAt?: Date;
 
     delay?: number;
+
+    image?: string;
+}
+
+export interface JobQueryDTO {
+    search?: string;
+
+    status?: "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+
+    priority?: "LOW" | "MEDIUM" | "HIGH";
+
+    sort?: "newest" | "oldest";
 }

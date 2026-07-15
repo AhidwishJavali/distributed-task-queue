@@ -8,6 +8,7 @@ import { createJobSchema } from "../validators/job.validators";
 import { CreateJobDTO,  JobParams } from "../types/job.types";
 import { updateJobSchema } from "../validators/job.validators";
 import { AuthRequest } from "../middleware/auth.middleware";
+import jobLogService from "../services/jobLog.service";
 
 class JobController {
   async createJob(
@@ -49,7 +50,28 @@ const { id, role } = req.user;
 
 const jobs = await jobService.getAllJobs(
     id,
-    role
+    role,
+    {
+        search:
+            typeof req.query.search === "string"
+                ? req.query.search
+                : undefined,
+
+        status:
+            typeof req.query.status === "string"
+                ? (req.query.status as any)
+                : undefined,
+
+        priority:
+            typeof req.query.priority === "string"
+                ? (req.query.priority as any)
+                : undefined,
+
+        sort:
+            typeof req.query.sort === "string"
+                ? (req.query.sort as any)
+                : undefined,
+    }
 );
 
         res.status(200).json({
@@ -227,6 +249,25 @@ await jobService.deleteAllJobs(
     } catch (error: any) {            
         next(error);
         return;
+    }
+}
+async getJobLogs(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+        const logs = await jobLogService.getLogs(id);
+
+        res.status(200).json({
+            success: true,
+            data: logs,
+        });
+
+    } catch (error) {
+        next(error);
     }
 }
 

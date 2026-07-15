@@ -2,7 +2,6 @@ import { Router } from "express";
 import jobRoutes from "./job.routes";
 import authRoutes from "./auth.routes";
 import userRoutes from "./user.routes";
-
 const router = Router();
 
 router.use("/auth", authRoutes);
