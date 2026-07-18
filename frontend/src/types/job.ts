@@ -12,6 +12,8 @@ processingStage: string;
 progress: number;
 
 workerName?: string;
+
+processedImage?: string;
 }
 
 export interface JobQueryDTO {

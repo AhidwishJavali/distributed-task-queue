@@ -6,6 +6,7 @@ import { serverAdapter } from "./config/bullboard";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./docs/swagger";
   import dlqRoutes from "./routes/dlq.routes";
+import path from "path";
 const app = express();
 
 app.use(cors());
@@ -26,6 +27,18 @@ app.use(
 );
 // API routes
 app.use("/api", routes);
+app.use(
+    "/processed-images",
+    express.static(
+        path.join(__dirname, "../output")
+    )
+);
+app.use(
+    "/images",
+    express.static(
+        path.join(__dirname, "../assets/images")
+    )
+);
 app.use(errorHandler);
 
 

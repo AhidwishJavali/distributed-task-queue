@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import app from "./app";
+import path from "path";
 
 import jobQueue from "./queues/job.queue";
 dotenv.config();

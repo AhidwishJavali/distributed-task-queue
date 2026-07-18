@@ -4,6 +4,7 @@ import { delay } from "../utils/delay";
 import deadLetterQueue from "../queues/dead-letter.queue";
 import redisConfig from "../config/redis";
 import jobLogService from "../services/jobLog.service";
+import imageProcessingService from "../services/imageProcessing.service";
 const WORKER_NAME = process.env.WORKER_NAME || "Worker";
 const worker = new Worker(
   "jobs",
@@ -11,6 +12,9 @@ const worker = new Worker(
     const { jobId } = job.data;
 
 const dbJob = await jobRepository.findById(jobId);
+let image = await imageProcessingService.loadImage(
+    dbJob!.image
+);
 async function runStage(
     progress: number,
     stage: string
@@ -115,14 +119,71 @@ const stages = [
 ];
 
 for (const currentStage of stages) {
+
     if (dbJob.progress >= currentStage.progress) {
         continue;
     }
 
-    await runStage(
-        currentStage.progress,
-        currentStage.stage
+    switch (currentStage.progress) {
+
+        case 10:
+            await runStage(10, "Loading Image");
+            break;
+
+        case 30:
+            image =
+                await imageProcessingService.preprocess(
+                    image
+                );
+
+            await runStage(
+                30,
+                "Pre-processing"
+            );
+            break;
+
+        case 60:
+            image =
+                await imageProcessingService.applyGrayscale(
+                    image
+                );
+
+            await runStage(
+                60,
+                "Applying Grayscale"
+            );
+            break;
+
+        case 90:
+            image =
+                await imageProcessingService.detectEdges(
+                    image
+                );
+
+            await runStage(
+                90,
+                "Edge Detection"
+            );
+            break;
+
+        case 100:
+            const processedImage =
+    await imageProcessingService.saveImage(
+        image,
+        dbJob.image
     );
+
+await jobRepository.updateProcessedImage(
+    jobId,
+    processedImage
+);
+
+await runStage(
+    100,
+    "Saving Result"
+);
+            break;
+    }
 }
 
         await jobRepository.updateStatus(jobId, "COMPLETED");

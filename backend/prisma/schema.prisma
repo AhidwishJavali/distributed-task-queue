@@ -69,6 +69,8 @@ model Job {
 
   workerName String?
   logs       JobLog[]
+
+  processedImage String?
 }
 
 model JobLog {

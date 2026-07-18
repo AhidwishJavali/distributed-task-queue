@@ -178,10 +178,23 @@ async function handleLogs() {
                         {job.description}
                     </p>
                     <img
-    src={`/assets/${job.image}`}
+    src={`http://localhost:5000/images/${job.image}`}
     alt={job.title}
     className="w-48 h-32 object-cover rounded-lg mt-4 border"
 />
+{job.processedImage && (
+    <>
+        <p className="mt-4 font-semibold">
+            Processed Image
+        </p>
+
+        <img
+            src={`http://localhost:5000/processed-images/${job.processedImage}`}
+            alt="Processed"
+            className="w-48 h-32 object-cover rounded-lg mt-2 border border-green-500"
+        />
+    </>
+)}
 
                     <div className="mt-4 flex gap-3">
 

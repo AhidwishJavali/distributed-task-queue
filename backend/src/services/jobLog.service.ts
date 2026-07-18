@@ -8,9 +8,7 @@ class JobLogService {
     async getLogs(jobId: string) {
         return jobLogRepository.findByJob(jobId);
     }
-    async getLogs(jobId: string) {
-    return jobLogRepository.findByJobId(jobId);
-}
+    
 }
 
 export default new JobLogService();

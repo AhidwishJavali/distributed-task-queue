@@ -214,5 +214,19 @@ async updateProgress(
     });
 }
 
+async updateProcessedImage(
+    id: string,
+    processedImage: string
+) {
+    return prisma.job.update({
+        where: {
+            id,
+        },
+        data: {
+            processedImage,
+        },
+    });
+}
+
 }
 export default new JobRepository();

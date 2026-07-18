@@ -251,6 +251,7 @@ await jobService.deleteAllJobs(
         return;
     }
 }
+
 async getJobLogs(
     req: AuthRequest,
     res: Response,
