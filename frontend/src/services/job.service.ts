@@ -2,7 +2,7 @@ import api from "./api";
 
 export interface CreateJobData {
     title: string;
-    description: string;
+    
     priority: "LOW" | "MEDIUM" | "HIGH";
     delay: number;
     image: string;
@@ -41,7 +41,6 @@ export const deleteJob = async (
 
 export interface UpdateJobData {
     title: string;
-    description: string;
     priority: "LOW" | "MEDIUM" | "HIGH";
     delay: number;
     image: string;

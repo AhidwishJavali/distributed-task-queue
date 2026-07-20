@@ -1,9 +1,7 @@
 export interface CreateJobDTO {
     title: string;
-    description?: string;
     priority: "LOW" | "MEDIUM" | "HIGH";
     delay?: number;
-    userId: string;
     image: string;
 }
 
@@ -12,7 +10,6 @@ export interface JobParams {
 }
 export interface UpdateJobDTO {
     title?: string;
-    description?: string;
 
     priority?: "LOW" | "MEDIUM" | "HIGH";
 

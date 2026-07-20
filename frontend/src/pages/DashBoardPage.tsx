@@ -3,7 +3,6 @@ import { FaSearch } from "react-icons/fa";
 import JobCard from "../components/JobCard";
 import { getStatistics } from "../services/job.service";
 import type { JobStatistics } from "../types/statistics";
-import socket from "../services/socket";
 import ConfirmationModal from "../components/ConfirmationModal";
 
 import {
@@ -16,12 +15,6 @@ import {
     deleteJob,
     deleteAllJobs,
 } from "../services/job.service";
-interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-}
 import DLQCard from "../components/DLQCard";
 
 import type { DLQJob } from "../types/dlq";
@@ -34,14 +27,7 @@ import {
 } from "../services/dlq.service";
 
 import type { Job } from "../types/job";
-import UserCard from "../components/UserCard";
-import {
-    getUsers,
-    getUserJobs,
-    deleteUser,
-} from "../services/user.service";
 
-import type { User as AdminUser } from "../types/user";
 
 
 export default function DashboardPage() {
@@ -77,21 +63,12 @@ const [confirmAction, setConfirmAction] =
 const [sort, setSort] = useState("newest");
     const [loading, setLoading] = useState(false);
     const [title, setTitle] = useState("");
-    const [description, setDescription] =
-        useState("");
         const [priority, setPriority] = useState<
     "LOW" | "MEDIUM" | "HIGH"
 >("MEDIUM");
 const [pageLoading, setPageLoading] = useState(true);
 const [delay, setDelay] = useState("");
 const [image, setImage] = useState("mountain.jpg");
-        const user: User = JSON.parse(
-    localStorage.getItem("user")!
-);
-const [users, setUsers] = useState<AdminUser[]>([]);
-
-const [selectedUserJobs, setSelectedUserJobs] =
-    useState<Job[]>([]);
 function openConfirm(
     title: string,
     message: string,
@@ -141,53 +118,6 @@ function handleClearDLQ() {
         }
     );
 
-}
-
-    async function loadUsers() {
-    if (user.role !== "ADMIN") return;
-
-    try {
-        const result = await getUsers();
-        setUsers(result.data);
-    } catch (err) {
-        console.log(err);
-    }
-}
-
-async function deleteUserConfirmed(id: string) {
-
-    try {
-
-        await deleteUser(id);
-
-        showSuccess("User deleted.");
-
-        loadUsers();
-
-    } catch {
-
-        showError("Unable to delete user.");
-
-    }
-
-}
-
-function handleDeleteUser(id: string) {
-
-    openConfirm(
-        "Delete User",
-        "Delete this user and all associated data?",
-        () => {
-            void deleteUserConfirmed(id);
-        }
-    );
-
-}
-
-async function handleViewJobs(id: string) {
-    const result = await getUserJobs(id);
-
-    setSelectedUserJobs(result.data);
 }
 
     async function loadJobs() {
@@ -293,17 +223,10 @@ return ()=>clearTimeout(timer);
         setPageLoading(true);
         await Promise.all([
     loadJobs(),
-    loadUsers(),
     loadDLQ(),
     loadStatistics(),
 ]);
 setPageLoading(false);
-socket.on("jobUpdated", async () => {
-    await Promise.all([
-        loadJobs(),
-        loadDLQ(),
-    ]);
-});
     };
 
     fetchJobs();
@@ -318,7 +241,6 @@ void loadStatistics();
     return () => {
     clearInterval(interval);
 
-    socket.off("jobUpdated");
 };
 
 },  [
@@ -338,7 +260,6 @@ void loadStatistics();
     try {
         await createJob({
             title,
-            description,
             priority,
             delay:
                 delay === ""
@@ -350,7 +271,6 @@ void loadStatistics();
         showSuccess("Job created successfully.");
 
         setTitle("");
-        setDescription("");
         setPriority("MEDIUM");
         setDelay("");
         setImage("mountain.jpg");
@@ -424,11 +344,7 @@ function handleDeleteAll() {
     );
 
 }
-
-    function logout() {
-        localStorage.removeItem("token");
-        window.location.href = "/";
-    }
+ 
 if (pageLoading) {
     return (
         <div className="min-h-screen flex justify-center items-center">
@@ -445,24 +361,14 @@ if (pageLoading) {
 
     <div>
         <h1 className="text-3xl font-bold">
-            Welcome, {user.name}
+            Welcome User
         </h1>
 
         <p className="text-gray-600">
-            {user.email}
+            Distributed Task Queue Dashboard
         </p>
 
-        <p className="text-sm text-blue-600 font-semibold">
-            {user.role}
-        </p>
     </div>
-
-    <button
-        onClick={logout}
-        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-    >
-        Logout
-    </button>
 
 </div>
 
@@ -655,15 +561,6 @@ if (pageLoading) {
         onChange={(e) => setTitle(e.target.value)}
     />
 
-    <input
-    disabled={loading}
-        className="border rounded-lg w-full p-3 mb-4"
-        placeholder="Description"
-        value={description}
-        onChange={(e) =>
-            setDescription(e.target.value)
-        }
-    />
     <label className="block mb-2 font-semibold">
     Select Image
 </label>
@@ -731,9 +628,7 @@ disabled={loading}
             <div className="flex justify-between items-center mb-4">
 
     <h2 className="text-2xl font-bold">
-    {user.role === "ADMIN"
-        ? "All Jobs"
-        : "My Jobs"}
+    All Jobs
 </h2>
 
     <div className="flex gap-3">
@@ -752,11 +647,7 @@ deletingAll
 ?
 "Deleting..."
 :
-user.role==="ADMIN"
-?
 "Delete All Jobs"
-:
-"Delete My Jobs"
 }
         </button>
 
@@ -791,47 +682,6 @@ Create a new job to start processing.
 ))
             
         )}
-        {user.role === "ADMIN" && (
-    <>
-        <hr className="my-10" />
-
-        <h2 className="text-3xl font-bold mb-6">
-            User Management
-        </h2>
-
-        {users.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-md p-6">
-                No users registered.
-            </div>
-        ) : (
-            users.map((u) => (
-                <UserCard
-                    key={u.id}
-                    user={u}
-                    onDelete={handleDeleteUser}
-                    onViewJobs={handleViewJobs}
-                />
-            ))
-        )}
-
-        {selectedUserJobs.length > 0 && (
-            <>
-                <h2 className="text-2xl font-bold mt-10 mb-5">
-                    Selected User Jobs
-                </h2>
-
-                {selectedUserJobs.map((job) => (
-                    <JobCard
-                        key={job.id}
-                        job={job}
-                        onDelete={handleDelete}
-                        onRefresh={loadJobs}
-                    />
-                ))}
-            </>
-        )}
-    </>
-)}
 <hr className="my-10" />
 
 <div className="flex justify-between items-center mb-6">

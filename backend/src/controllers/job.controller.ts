@@ -1,4 +1,5 @@
 import {
+    Request,
     Response,
     NextFunction,
     RequestHandler,
@@ -7,27 +8,18 @@ import jobService from "../services/job.service";
 import { createJobSchema } from "../validators/job.validators";
 import { CreateJobDTO,  JobParams } from "../types/job.types";
 import { updateJobSchema } from "../validators/job.validators";
-import { AuthRequest } from "../middleware/auth.middleware";
 import jobLogService from "../services/jobLog.service";
 
 class JobController {
   async createJob(
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {
-      // Validate request body
       const validatedData = createJobSchema.parse(req.body);
 
-    const userId = req.user.id;
-
-const job = await jobService.createJob({
-    ...validatedData,
-    userId,
-});
-
-      // Send success response
+    const job = await jobService.createJob(validatedData);
        res.status(201).json({
         success: true,
         message: "Job created successfully",
@@ -39,18 +31,13 @@ const job = await jobService.createJob({
     }
   }
   async getAllJobs(
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {
-        
-
-const { id, role } = req.user;
 
 const jobs = await jobService.getAllJobs(
-    id,
-    role,
     {
         search:
             typeof req.query.search === "string"
@@ -89,18 +76,14 @@ const jobs = await jobService.getAllJobs(
     }
 }
 async getStatistics(
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {
-        const user = req.user;
 
         const stats =
-            await jobService.getStatistics(
-                user.id,
-                user.role
-            );
+            await jobService.getStatistics();
 
         res.status(200).json({
             success: true,
@@ -113,18 +96,15 @@ async getStatistics(
     }
 }
 async getJobById(
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {
 
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-        const user = req.user;
         const job = await jobService.getJobById(
     id,
-    user.id,
-    user.role
 );
         if (!job) {
              res.status(404).json({
@@ -148,18 +128,16 @@ async getJobById(
     }
 }
 async updateJob(
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {
 
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-        const user = req.user;
 
         const validatedData = updateJobSchema.parse(req.body);
 
-        // Convert ISO strings to Date objects if present
         const updateData = {
             ...validatedData,
             startedAt: validatedData.startedAt
@@ -172,8 +150,6 @@ async updateJob(
 
         const job = await jobService.updateJob(
     id,
-    user.id,
-    user.role,
     updateData
 );
     res.status(200).json({
@@ -184,8 +160,6 @@ async updateJob(
         return;
 
     } catch (error: any) {
-
-        // Prisma throws if record doesn't exist
         if (error.code === "P2025") {
              res.status(404).json({
                 success: false,
@@ -198,7 +172,7 @@ async updateJob(
     }
 }
 async deleteJob(
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
 ) {
@@ -206,12 +180,8 @@ async deleteJob(
 
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
-        const user = req.user;
-
 await jobService.deleteJob(
     id,
-    user.id,
-    user.role
 );
 
          res.status(200).json({
@@ -234,35 +204,15 @@ await jobService.deleteJob(
     }
 }
 
-/*async deleteAllJobs(req: Request, res: Response, next: NextFunction) {
-    try {
-        const user = (req as AuthRequest).user;
-
-        await jobService.deleteAllJobs(user);
-
-        res.status(200).json({
-            success: true,
-            message: "All jobs deleted successfully",
-        });
-
-        return;
-    } catch (error) {
-        next(error);
-    }
-}*/
 async deleteAllJobs(
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {    
 
-        const user = req.user;
 
-await jobService.deleteAllJobs(
-    user.id,
-    user.role
-);    
+await jobService.deleteAllJobs();    
 
          res.status(200).json({
             success: true,
@@ -277,7 +227,7 @@ await jobService.deleteAllJobs(
 }
 
 async getJobLogs(
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
 ) {

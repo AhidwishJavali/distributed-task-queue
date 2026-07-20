@@ -1,10 +1,10 @@
 import { Router } from "express";
 import jobController from "../controllers/job.controller";
-import { authenticate, AuthRequest } from "../middleware/auth.middleware";
+
 
 const router = Router();
 
-router.use(authenticate);
+
 
 
 /**
@@ -34,7 +34,7 @@ router.use(authenticate);
  *         description: Job created successfully
  */
 router.post("/", (req, res, next) =>
-    jobController.createJob(req as AuthRequest, res, next)
+    jobController.createJob(req, res, next)
 );
 
 /**
@@ -50,12 +50,12 @@ router.post("/", (req, res, next) =>
  *         description: List of jobs
  */
 router.get("/", (req, res, next) =>
-    jobController.getAllJobs(req as AuthRequest, res, next)
+    jobController.getAllJobs(req, res, next)
 );
 
 router.get(
     "/statistics",
-    (req, res, next) => jobController.getStatistics(req as AuthRequest, res, next)
+    (req, res, next) => jobController.getStatistics(req, res, next)
 );
 /**
  * @swagger
@@ -78,13 +78,12 @@ router.get(
  *         description: Job not found
  */
 router.get("/:id", (req, res, next) =>
-    jobController.getJobById(req as unknown as AuthRequest, res, next)
+    jobController.getJobById(req, res, next)
 );
 
 router.get(
     "/:id/logs",
-    authenticate,
-    (req, res, next) => jobController.getJobLogs(req as AuthRequest, res, next)
+    (req, res, next) => jobController.getJobLogs(req, res, next)
 );
 /**
  * @swagger
@@ -111,7 +110,7 @@ router.get(
  *         description: Job updated successfully
  */
 router.patch("/:id", (req, res, next) =>
-    jobController.updateJob(req as unknown as AuthRequest, res, next)
+    jobController.updateJob(req, res, next)
 );
 
 /**
@@ -133,7 +132,7 @@ router.patch("/:id", (req, res, next) =>
  *         description: Job deleted successfully
  */
 router.delete("/:id", (req, res, next) =>
-    jobController.deleteJob(req as unknown as AuthRequest, res, next)
+    jobController.deleteJob(req, res, next)
 );
 
 /**
@@ -149,7 +148,7 @@ router.delete("/:id", (req, res, next) =>
  *         description: Jobs deleted successfully
  */
 router.delete("/", (req, res, next) =>
-    jobController.deleteAllJobs(req as AuthRequest, res, next)
+    jobController.deleteAllJobs(req, res, next)
 );
 
 export default router;

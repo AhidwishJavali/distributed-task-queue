@@ -5,7 +5,6 @@ import deadLetterQueue from "../queues/dead-letter.queue";
 import redisConfig from "../config/redis";
 import jobLogService from "../services/jobLog.service";
 import imageProcessingService from "../services/imageProcessing.service";
-//import { getIO } from "../config/socket";
 const WORKER_NAME = process.env.WORKER_NAME || "Worker";
 const worker = new Worker(
   "jobs",
@@ -42,7 +41,7 @@ async function runStage(
         stage,
         WORKER_NAME
     );
-    //getIO().emit("jobUpdated");
+    
     await jobLogService.addLog(
     jobId,
     `${stage} (${progress}%)`
@@ -77,27 +76,6 @@ await jobLogService.addLog(
     try {
         await jobRepository.updateStatus(jobId, "RUNNING");
 
-        /*const random = Math.random();
-
-        if (random < 0.5) {
-            throw new Error("Random Failure");
-        }
-       throw new Error("Forced Failure");
-
-        await job.updateProgress(10);
-await delay(5000);
-
-await job.updateProgress(30);
-await delay(5000);
-
-await job.updateProgress(60);
-await delay(5000);
-
-await job.updateProgress(90);
-await delay(5000);
-
-await job.updateProgress(100);
-await delay(5000);*/
 const stages = [
     {
         progress: 10,
@@ -190,7 +168,7 @@ await runStage(
 }
 
         await jobRepository.updateStatus(jobId, "COMPLETED");
-        //getIO().emit("jobUpdated");
+        
         await jobRepository.updateProgress(
     jobId,
     100,
@@ -261,12 +239,12 @@ worker.on("failed", async (job, err) => {
         error: err.message,
         failedAt: new Date(),
     });
-    //getIO().emit("jobUpdated");
+
 
     console.log("💀 Job permanently moved to DLQ.");
 }else {
         console.log("🔄 BullMQ will retry...");
-        //getIO().emit("jobUpdated");
+    
         await jobLogService.addLog(
     job.data.jobId,
     `Retry ${job.attemptsMade} scheduled`

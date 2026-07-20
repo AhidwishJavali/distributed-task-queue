@@ -6,19 +6,10 @@ class JobRepository {
     return prisma.job.create({
        data: {
     title: data.title,
-    description: data.description,
     priority: data.priority,
     delay: data.delay ?? 0,
-    userId: data.userId,
     image: data.image,
 },
-    });
-}
-  async findAll() {
-    return prisma.job.findMany({
-        orderBy: {
-            createdAt: "desc"
-        }
     });
 }
 async findById(id: string) {
@@ -77,25 +68,10 @@ async updateProcessing(
         data,
     });
 }
-/*async findAllByUser(userId: string) {
-    return prisma.job.findMany({
-        where: {
-            userId,
-        },
-        orderBy: {
-            createdAt: "desc",
-        },
-    });
-}*/
-async findAllByUser(
-    userId: string,
-    role: "USER" | "ADMIN",
-    query: JobQueryDTO
-) {
-    return prisma.job.findMany({
-        where: {
-            ...(role === "ADMIN" ? {} : { userId }),
 
+async findAll(query: JobQueryDTO) {
+    return prisma.job.findMany({
+        where: {
             ...(query.search
                 ? {
                       title: {
@@ -124,76 +100,6 @@ async findAllByUser(
                     ? "asc"
                     : "desc",
         },
-    });
-}
-async findByIdForUser(
-    id: string,
-    userId: string,
-    role: "USER" | "ADMIN"
-) {
-    return prisma.job.findFirst({
-        where: {
-            id,
-            ...(role === "ADMIN" ? {} : { userId }),
-        },
-    });
-}
-
-async updateForUser(
-    id: string,
-    userId: string,
-    role: "USER" | "ADMIN",
-    data: UpdateJobDTO
-) {
-    const job = await this.findByIdForUser(
-        id,
-        userId,
-        role
-    );
-
-    if (!job) {
-        throw new Error("Job not found");
-    }
-
-    return prisma.job.update({
-        where: {
-            id,
-        },
-        data,
-    });
-}
-async deleteForUser(
-    id: string,
-    userId: string,
-    role: "USER" | "ADMIN"
-) {
-    const job = await this.findByIdForUser(
-        id,
-        userId,
-        role
-    );
-
-    if (!job) {
-        throw new Error("Job not found");
-    }
-
-    return prisma.job.delete({
-        where: {
-            id,
-        },
-    });
-}
-async deleteAllForUser(
-    userId: string,
-    role: "USER" | "ADMIN"
-) {
-    return prisma.job.deleteMany({
-        where:
-            role === "ADMIN"
-                ? {}
-                : {
-                      userId,
-                  },
     });
 }
 async updateProgress(
@@ -228,15 +134,8 @@ async updateProcessedImage(
     });
 }
 async getStatistics(
-    userId: string,
-    role: "USER" | "ADMIN"
 ) {
-    const where =
-        role === "ADMIN"
-            ? {}
-            : {
-                  userId,
-              };
+    
 
     const [
         total,
@@ -246,33 +145,33 @@ async getStatistics(
         failed,
     ] = await Promise.all([
         prisma.job.count({
-            where,
+            where: {},
         }),
 
         prisma.job.count({
             where: {
-                ...where,
+                
                 status: "PENDING",
             },
         }),
 
         prisma.job.count({
             where: {
-                ...where,
+                
                 status: "RUNNING",
             },
         }),
 
         prisma.job.count({
             where: {
-                ...where,
+                
                 status: "COMPLETED",
             },
         }),
 
         prisma.job.count({
             where: {
-                ...where,
+            
                 status: "FAILED",
             },
         }),

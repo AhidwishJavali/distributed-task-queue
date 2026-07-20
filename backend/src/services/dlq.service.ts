@@ -10,8 +10,6 @@ const priorityMap = {
 
 class DLQService {
     async getFailedJobs(
-    userId: string,
-    role: "USER" | "ADMIN"
 ) {
     const jobs = await deadLetterQueue.getJobs([
         "waiting",
@@ -25,10 +23,8 @@ class DLQService {
     for (const job of jobs) {
 
         const dbJob =
-            await jobRepository.findByIdForUser(
+            await jobRepository.findById(
                 job.data.jobId,
-                userId,
-                role
             );
 
         if (!dbJob) {
@@ -46,8 +42,6 @@ class DLQService {
 
     async retry(
     jobId: string,
-    userId: string,
-    role: "USER" | "ADMIN"
 ) {
         const jobs = await deadLetterQueue.getJobs([
             "waiting",
@@ -65,10 +59,8 @@ class DLQService {
         }
 
         const dbJob =
-    await jobRepository.findByIdForUser(
+    await jobRepository.findById(
         failedJob.data.jobId,
-        userId,
-        role
     );
 
         if (!dbJob) {
@@ -104,8 +96,6 @@ class DLQService {
 
     async delete(
     jobId: string,
-    userId: string,
-    role: "USER" | "ADMIN"
 ) {
     const jobs = await deadLetterQueue.getJobs([
         "waiting",
@@ -123,10 +113,8 @@ class DLQService {
     }
 
     const dbJob =
-        await jobRepository.findByIdForUser(
+        await jobRepository.findById(
             failedJob.data.jobId,
-            userId,
-            role
         );
 
     if (!dbJob) {
@@ -142,8 +130,6 @@ class DLQService {
 }
 
     async clear(
-    userId: string,
-    role: "USER" | "ADMIN"
 ) {
     const jobs = await deadLetterQueue.getJobs([
         "waiting",
@@ -155,10 +141,8 @@ class DLQService {
     for (const job of jobs) {
 
         const dbJob =
-            await jobRepository.findByIdForUser(
+            await jobRepository.findById(
                 job.data.jobId,
-                userId,
-                role
             );
 
         if (!dbJob) {

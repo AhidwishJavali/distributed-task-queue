@@ -12,7 +12,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/dlq", dlqRoutes);
-// Health check
 app.get("/health", (_, res) => {
   res.json({
     success: true,
@@ -25,7 +24,6 @@ app.use(
     swaggerUi.serve,
     swaggerUi.setup(swaggerSpec)
 );
-// API routes
 app.use("/api", routes);
 app.use(
     "/processed-images",

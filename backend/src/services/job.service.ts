@@ -64,46 +64,37 @@ private async rescheduleJob(
     return job;
 }
 async getAllJobs(
-    userId: string,
-    role: "USER" | "ADMIN",
     query: JobQueryDTO
 ) {
-    return jobRepository.findAllByUser(
-        userId,
-        role,
+    return jobRepository.findAll(
+        
         query
     );
 }
 async getStatistics(
-    userId: string,
-    role: "USER" | "ADMIN"
+   
 ) {
     return jobRepository.getStatistics(
-        userId,
-        role
+       
     );
+    
 }
 async getJobById(
     id: string,
-    userId: string,
-    role: "USER" | "ADMIN"
+   
 ) {
-    return jobRepository.findByIdForUser(
+    return jobRepository.findById(
         id,
-        userId,
-        role
+        
     );
 }
 async updateJob(
     id: string,
-    userId: string,
-    role: "USER" | "ADMIN",
+    
     data: UpdateJobDTO
 ) {
-    const job = await jobRepository.findByIdForUser(
-        id,
-        userId,
-        role
+    const job = await jobRepository.findById(
+        id
     );
 
     if (!job) {
@@ -117,10 +108,9 @@ async updateJob(
     }
 
     const updatedJob =
-        await jobRepository.updateForUser(
+        await jobRepository.update(
             id,
-            userId,
-            role,
+            
             data
         );
 
@@ -134,13 +124,9 @@ async updateJob(
 }
 async deleteJob(
     id: string,
-    userId: string,
-    role: "USER" | "ADMIN"
 ) {
-    const job = await jobRepository.findByIdForUser(
+    const job = await jobRepository.findById(
         id,
-        userId,
-        role
     );
 
     if (!job) {
@@ -151,19 +137,15 @@ async deleteJob(
         throw new Error("Running jobs cannot be deleted.");
     }
 
-    return jobRepository.deleteForUser(
+    return jobRepository.delete(
         id,
-        userId,
-        role
     );
 }
 async deleteAllJobs(
-    userId: string,
-    role: "USER" | "ADMIN"
+    
 ) {
-    return jobRepository.deleteAllForUser(
-        userId,
-        role
+    return jobRepository.deleteAll(
+        
     );
 }
 

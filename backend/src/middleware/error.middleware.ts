@@ -8,7 +8,6 @@ export function errorHandler(
 ) {
     console.error(err);
 
-    // Zod validation errors
     if (err.name === "ZodError") {
         return res.status(400).json({
             success: false,
@@ -17,7 +16,6 @@ export function errorHandler(
         });
     }
 
-    // Prisma "record not found"
     if (err.code === "P2025") {
         return res.status(404).json({
             success: false,
@@ -25,7 +23,7 @@ export function errorHandler(
         });
     }
 
-    // Custom errors
+
     if (err.statusCode) {
         return res.status(err.statusCode).json({
             success: false,
@@ -33,7 +31,7 @@ export function errorHandler(
         });
     }
 
-    // Default
+
     return res.status(500).json({
         success: false,
         message: "Internal Server Error",

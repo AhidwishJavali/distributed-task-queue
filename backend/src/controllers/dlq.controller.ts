@@ -1,6 +1,5 @@
 import { RequestHandler } from "express";
 import dlqService from "../services/dlq.service";
-import { AuthRequest } from "../middleware/auth.middleware";
 
 class DLQController {
     getFailedJobs: RequestHandler = async (
@@ -9,13 +8,9 @@ class DLQController {
         next
     ) => {
         try {
-            const authReq = req as AuthRequest;
 
 const jobs =
-    await dlqService.getFailedJobs(
-        authReq.user.id,
-        authReq.user.role
-    );
+    await dlqService.getFailedJobs();
 
             res.json({
                 success: true,
@@ -36,13 +31,8 @@ const jobs =
     ? req.params.id[0]
     : req.params.id;
 
-const authReq = req as AuthRequest;
 
-await dlqService.retry(
-    id,
-    authReq.user.id,
-    authReq.user.role
-);
+await dlqService.retry(id);
 
             res.json({
                 success: true,
@@ -63,12 +53,9 @@ await dlqService.retry(
             ? req.params.id[0]
             : req.params.id;
 
-        const authReq = req as AuthRequest;
 
         await dlqService.delete(
             id,
-            authReq.user.id,
-            authReq.user.role
         );
 
         res.json({
@@ -86,12 +73,9 @@ await dlqService.retry(
 ) => {
     try {
 
-        const authReq = req as AuthRequest;
+        
 
-await dlqService.clear(
-    authReq.user.id,
-    authReq.user.role
-);
+        await dlqService.clear();
 
         res.json({
             success: true,

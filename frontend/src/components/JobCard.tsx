@@ -36,8 +36,6 @@ export default function JobCard({
 
     const [title, setTitle] = useState(job.title);
 const [deleting,setDeleting]=useState(false);
-    const [description, setDescription] =
-        useState(job.description);
     const [priority, setPriority] = useState(job.priority);
     
     const [delay, setDelay] = useState(
@@ -74,7 +72,6 @@ async function handleLogs() {
 
             await updateJob(job.id, {
                 title,
-                description,
                 priority,
                 image: job.image,
                 delay:
@@ -97,7 +94,6 @@ async function handleLogs() {
 
     function cancelEdit() {
         setTitle(job.title);
-        setDescription(job.description);
         setPriority(job.priority);
         setDelay(
     String(job.delay / 1000)
@@ -115,17 +111,6 @@ async function handleLogs() {
                         value={title}
                         onChange={(e) =>
                             setTitle(e.target.value)
-                        }
-                    />
-
-                    <textarea
-                        className="border rounded-lg w-full p-3 mb-3"
-                        rows={3}
-                        value={description}
-                        onChange={(e) =>
-                            setDescription(
-                                e.target.value
-                            )
                         }
                     />
                     <select
@@ -181,10 +166,6 @@ async function handleLogs() {
                     <h3 className="text-xl font-semibold">
                         {job.title}
                     </h3>
-
-                    <p className="text-gray-600 mt-2">
-                        {job.description}
-                    </p>
                     <img
     src={`http://localhost:5000/images/${job.image}`}
     alt={job.title}

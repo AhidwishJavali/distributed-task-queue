@@ -1,10 +1,7 @@
 import { Router } from "express";
 import dlqController from "../controllers/dlq.controller";
-import { authenticate } from "../middleware/auth.middleware";
 
 const router = Router();
-
-router.use(authenticate);
 router.delete(
     "/",
     dlqController.clearDLQ
