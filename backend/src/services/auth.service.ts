@@ -5,6 +5,7 @@ import {
     LoginUserDTO,
     RegisterUserDTO,
 } from "../types/user.types";
+import AppError from "../utils/AppError";
 
 class AuthService {
     async register(data: RegisterUserDTO) {
@@ -13,7 +14,10 @@ class AuthService {
         );
 
         if (existingUser) {
-            throw new Error("Email already registered");
+            throw new AppError(
+    "Email already registered",
+    409
+);
         }
 
         const hashedPassword = await bcrypt.hash(
@@ -40,7 +44,10 @@ class AuthService {
         );
 
         if (!user) {
-            throw new Error("Invalid credentials");
+            throw new AppError(
+    "Invalid email or password",
+    401
+);
         }
 
         const validPassword = await bcrypt.compare(
@@ -49,12 +56,18 @@ class AuthService {
         );
 
         if (!validPassword) {
-            throw new Error("Invalid credentials");
+            throw new AppError(
+    "Invalid email or password",
+    401
+);
         }
         const secret = process.env.JWT_SECRET;
 
     if (!secret) {
-    throw new Error("JWT_SECRET is not configured");
+    throw new AppError(
+    "Server configuration error",
+    500
+);
 }
         const token = jwt.sign(
             {

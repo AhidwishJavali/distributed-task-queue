@@ -13,5 +13,9 @@ router.delete(
 router.get("/", dlqController.getFailedJobs);
 
 router.post("/:id/retry", dlqController.retryJob);
+router.delete(
+    "/:id",
+    dlqController.deleteJob
+);
 
 export default router;

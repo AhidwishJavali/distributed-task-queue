@@ -88,6 +88,30 @@ const jobs = await jobService.getAllJobs(
 
     }
 }
+async getStatistics(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const user = req.user;
+
+        const stats =
+            await jobService.getStatistics(
+                user.id,
+                user.role
+            );
+
+        res.status(200).json({
+            success: true,
+            data: stats,
+        });
+
+        return;
+    } catch (error) {
+        next(error);
+    }
+}
 async getJobById(
     req: AuthRequest,
     res: Response,

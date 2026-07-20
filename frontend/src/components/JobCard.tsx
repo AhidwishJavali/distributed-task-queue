@@ -3,6 +3,8 @@ import type { Job } from "../types/job";
 import { updateJob } from "../services/job.service";
 import { getJobLogs } from "../services/jobLog.service";
 import type { JobLog } from "../types/jobLog";
+import { showError, showSuccess } from "../utils/toast";
+import ImageModal from "./ImageModal";
 
 interface Props {
     job: Job;
@@ -33,7 +35,7 @@ export default function JobCard({
     const [editing, setEditing] = useState(false);
 
     const [title, setTitle] = useState(job.title);
-
+const [deleting,setDeleting]=useState(false);
     const [description, setDescription] =
         useState(job.description);
     const [priority, setPriority] = useState(job.priority);
@@ -46,6 +48,8 @@ export default function JobCard({
         const [logs, setLogs] = useState<JobLog[]>([]);
 const [showLogs, setShowLogs] = useState(false);
 const [loadingLogs, setLoadingLogs] = useState(false);
+const [previewImage, setPreviewImage] =
+    useState<string | null>(null);
 async function handleLogs() {
     if (showLogs) {
         setShowLogs(false);
@@ -80,9 +84,13 @@ async function handleLogs() {
             });
 
             setEditing(false);
-
+            showSuccess("Job updated.");
             onRefresh();
-        } finally {
+        } catch (err) {
+            console.log(err);
+            showError("Update failed.");
+        }
+        finally {
             setLoading(false);
         }
     }
@@ -180,7 +188,12 @@ async function handleLogs() {
                     <img
     src={`http://localhost:5000/images/${job.image}`}
     alt={job.title}
-    className="w-48 h-32 object-cover rounded-lg mt-4 border"
+    className="w-48 h-32 object-cover rounded-lg mt-4 border cursor-pointer hover:scale-105 transition"
+    onClick={() =>
+        setPreviewImage(
+            `http://localhost:5000/images/${job.image}`
+        )
+    }
 />
 {job.processedImage && (
     <>
@@ -189,10 +202,15 @@ async function handleLogs() {
         </p>
 
         <img
-            src={`http://localhost:5000/processed-images/${job.processedImage}`}
-            alt="Processed"
-            className="w-48 h-32 object-cover rounded-lg mt-2 border border-green-500"
-        />
+    src={`http://localhost:5000/processed-images/${job.processedImage}`}
+    alt="Processed"
+    className="w-48 h-32 object-cover rounded-lg mt-2 border border-green-500 cursor-pointer hover:scale-105 transition"
+    onClick={() =>
+        setPreviewImage(
+            `http://localhost:5000/processed-images/${job.processedImage}`
+        )
+    }
+/>
     </>
 )}
 
@@ -271,13 +289,24 @@ async function handleLogs() {
 </button>
 
                         <button
-                            onClick={() =>
-                                onDelete(job.id)
-                            }
-                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
-                        >
-                            🗑 Delete
-                        </button>
+                        disabled={deleting || job.status==="RUNNING"}
+    onClick={async function handleDeleteClick(){
+
+setDeleting(true);
+
+await onDelete(job.id);
+
+setDeleting(false);
+
+}}
+    className={`px-4 py-2 rounded-lg text-white ${
+        job.status === "RUNNING"
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-red-500 hover:bg-red-600"
+    }`}
+>
+    🗑 {deleting?"Deleting...":"Delete"}
+</button>
                         <button
     onClick={handleLogs}
     className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg"
@@ -325,10 +354,23 @@ async function handleLogs() {
         Jobs can only be edited while pending.
     </p>
 )}
+{job.status === "RUNNING" && (
+    <p className="text-sm text-orange-600 mt-1">
+        Running jobs cannot be deleted until processing finishes.
+    </p>
+)}
                     
                 </>
             )}
-
+{previewImage && (
+    <ImageModal
+        image={previewImage}
+        title={job.title}
+        onClose={() =>
+            setPreviewImage(null)
+        }
+    />
+)}
         </div>
     );
 }

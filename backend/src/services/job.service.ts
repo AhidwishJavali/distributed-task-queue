@@ -14,27 +14,46 @@ class JobService {
 
 private async enqueueJob(job: { id: string; priority: "LOW" | "MEDIUM" | "HIGH"; }, delay = 0) {
     await jobQueue.add(
-        "process-job",
-        {
-            jobId: job.id,
+    "process-job",
+    {
+        jobId: job.id,
+    },
+    {
+        jobId: job.id,
+        priority: priorityMap[job.priority],
+        delay,
+        attempts: 3,
+        backoff: {
+            type: "exponential",
+            delay: 2000,
         },
-        {
-            priority: priorityMap[job.priority],
+        removeOnComplete: 50,
+        removeOnFail: 100,
+    }
+);
+}
+private async rescheduleJob(
+    job: {
+        id: string;
+        priority: "LOW" | "MEDIUM" | "HIGH";
+        delay: number;
+    }
+) {
+    const jobs = await jobQueue.getJobs([
+        "waiting",
+        "delayed",
+        "prioritized",
+    ]);
 
-            delay,
-
-            attempts: 3,
-
-            backoff: {
-                type: "exponential",
-                delay: 2000,
-            },
-
-            removeOnComplete: 50,
-
-            removeOnFail: 100,
-        }
+    const existing = jobs.find(
+        (bullJob) => bullJob.data.jobId === job.id
     );
+
+    if (existing) {
+        await existing.remove();
+    }
+
+    await this.enqueueJob(job, job.delay);
 }
   async createJob(data: CreateJobDTO) {
 
@@ -55,6 +74,15 @@ async getAllJobs(
         query
     );
 }
+async getStatistics(
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    return jobRepository.getStatistics(
+        userId,
+        role
+    );
+}
 async getJobById(
     id: string,
     userId: string,
@@ -73,32 +101,56 @@ async updateJob(
     data: UpdateJobDTO
 ) {
     const job = await jobRepository.findByIdForUser(
-    id,
-    userId,
-    role
-);
-
-if (!job) {
-    throw new Error("Job not found");
-}
-
-if (job.status !== "PENDING") {
-    throw new Error(
-        "Only pending jobs can be edited."
-    );
-}
-    return jobRepository.updateForUser(
         id,
         userId,
-        role,
-        data
+        role
     );
+
+    if (!job) {
+        throw new Error("Job not found");
+    }
+
+    if (job.status !== "PENDING") {
+        throw new Error(
+            "Only pending jobs can be edited."
+        );
+    }
+
+    const updatedJob =
+        await jobRepository.updateForUser(
+            id,
+            userId,
+            role,
+            data
+        );
+
+    await this.rescheduleJob({
+        id: updatedJob.id,
+        priority: updatedJob.priority,
+        delay: updatedJob.delay,
+    });
+
+    return updatedJob;
 }
 async deleteJob(
     id: string,
     userId: string,
     role: "USER" | "ADMIN"
 ) {
+    const job = await jobRepository.findByIdForUser(
+        id,
+        userId,
+        role
+    );
+
+    if (!job) {
+        throw new Error("Job not found");
+    }
+
+    if (job.status === "RUNNING") {
+        throw new Error("Running jobs cannot be deleted.");
+    }
+
     return jobRepository.deleteForUser(
         id,
         userId,

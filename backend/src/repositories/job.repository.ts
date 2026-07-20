@@ -227,6 +227,65 @@ async updateProcessedImage(
         },
     });
 }
+async getStatistics(
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    const where =
+        role === "ADMIN"
+            ? {}
+            : {
+                  userId,
+              };
+
+    const [
+        total,
+        pending,
+        running,
+        completed,
+        failed,
+    ] = await Promise.all([
+        prisma.job.count({
+            where,
+        }),
+
+        prisma.job.count({
+            where: {
+                ...where,
+                status: "PENDING",
+            },
+        }),
+
+        prisma.job.count({
+            where: {
+                ...where,
+                status: "RUNNING",
+            },
+        }),
+
+        prisma.job.count({
+            where: {
+                ...where,
+                status: "COMPLETED",
+            },
+        }),
+
+        prisma.job.count({
+            where: {
+                ...where,
+                status: "FAILED",
+            },
+        }),
+    ]);
+
+    return {
+        total,
+        pending,
+        running,
+        completed,
+        failed,
+    };
+}
 
 }
 export default new JobRepository();

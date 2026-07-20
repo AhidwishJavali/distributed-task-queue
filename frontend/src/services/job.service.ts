@@ -63,3 +63,11 @@ export const deleteAllJobs = async () => {
     const response = await api.delete("/jobs");
     return response.data;
 };
+
+export async function getStatistics() {
+    const response = await api.get(
+        "/jobs/statistics"
+    );
+
+    return response.data;
+}

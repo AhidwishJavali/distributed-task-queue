@@ -53,6 +53,32 @@ await dlqService.retry(
             next(err);
         }
     };
+    deleteJob: RequestHandler = async (
+    req,
+    res,
+    next
+) => {
+    try {
+        const id = Array.isArray(req.params.id)
+            ? req.params.id[0]
+            : req.params.id;
+
+        const authReq = req as AuthRequest;
+
+        await dlqService.delete(
+            id,
+            authReq.user.id,
+            authReq.user.role
+        );
+
+        res.json({
+            success: true,
+            message: "DLQ job deleted successfully.",
+        });
+    } catch (err) {
+        next(err);
+    }
+};
     clearDLQ: RequestHandler = async (
     req,
     res,

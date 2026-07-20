@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { register } from "../services/auth.service";
+import {
+    showSuccess,
+    showError,
+} from "../utils/toast";
 
 export default function RegisterPage() {
     const navigate = useNavigate();
@@ -19,15 +23,15 @@ export default function RegisterPage() {
                 password,
             });
 
-            alert("Registration successful");
+            showSuccess("Registration successful.");
 
             navigate("/");
         } catch (err) {
             const error = err as { response?: { data?: { message?: string } } };
-            alert(
-                error.response?.data?.message ??
-                "Registration failed"
-            );
+            showError(
+    error.response?.data?.message ??
+    "Registration failed."
+);
         }
     }
 

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../services/auth.service";
-
+import {
+    showSuccess,
+    showError,
+} from "../utils/toast";
 export default function LoginPage() {
     const navigate = useNavigate();
 
@@ -28,7 +31,7 @@ localStorage.setItem(
     "user",
     JSON.stringify(result.data.user)
 );
-
+showSuccess("Welcome back!");
 navigate("/dashboard");
         } catch (err: unknown) {
             type ErrorWithResponse = {
@@ -45,14 +48,14 @@ navigate("/dashboard");
                 "response" in err
             ) {
                 const errorWithResponse = err as ErrorWithResponse;
-                alert(
+                showError(
                     errorWithResponse.response?.data?.message ??
                         "Login failed"
                 );
             } else if (err instanceof Error) {
-                alert(err.message);
+               showError(err.message);
             } else {
-                alert("Login failed");
+                showError("Login failed");
             }
         }
     }

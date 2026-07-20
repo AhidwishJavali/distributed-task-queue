@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 import JobCard from "../components/JobCard";
+import { getStatistics } from "../services/job.service";
+import type { JobStatistics } from "../types/statistics";
+import socket from "../services/socket";
+import ConfirmationModal from "../components/ConfirmationModal";
+
+import {
+    showSuccess,
+    showError,
+} from "../utils/toast";
 import {
     getJobs,
     createJob,
@@ -21,6 +30,7 @@ import {
     getDLQJobs,
     retryDLQJob,
     clearDLQ,
+    deleteDLQJob,
 } from "../services/dlq.service";
 
 import type { Job } from "../types/job";
@@ -35,16 +45,34 @@ import type { User as AdminUser } from "../types/user";
 
 
 export default function DashboardPage() {
+    
     const [jobs, setJobs] = useState<Job[]>([]);
+    const [clearingDLQ,setClearingDLQ]=useState(false);
+    const [statistics, setStatistics] =
+    useState<JobStatistics>({
+        total: 0,
+        pending: 0,
+        running: 0,
+        completed: 0,
+        failed: 0,
+    });
     const [dlqJobs, setDLQJobs] =
     useState<DLQJob[]>([]);
     const [search, setSearch] = useState("");
-
+const [debouncedSearch,setDebouncedSearch]=useState(search);
 const [statusFilter, setStatusFilter] =
     useState("");
 
 const [priorityFilter, setPriorityFilter] =
     useState("");
+    const [confirmOpen, setConfirmOpen] = useState(false);
+
+const [confirmTitle, setConfirmTitle] = useState("");
+const [deletingAll,setDeletingAll]=useState(false);
+const [confirmMessage, setConfirmMessage] = useState("");
+
+const [confirmAction, setConfirmAction] =
+    useState<() => void>(() => {});
 
 const [sort, setSort] = useState("newest");
     const [loading, setLoading] = useState(false);
@@ -54,6 +82,7 @@ const [sort, setSort] = useState("newest");
         const [priority, setPriority] = useState<
     "LOW" | "MEDIUM" | "HIGH"
 >("MEDIUM");
+const [pageLoading, setPageLoading] = useState(true);
 const [delay, setDelay] = useState("");
 const [image, setImage] = useState("mountain.jpg");
         const user: User = JSON.parse(
@@ -63,18 +92,54 @@ const [users, setUsers] = useState<AdminUser[]>([]);
 
 const [selectedUserJobs, setSelectedUserJobs] =
     useState<Job[]>([]);
+function openConfirm(
+    title: string,
+    message: string,
+    action: () => void
+) {
+    setConfirmTitle(title);
 
-    async function handleClearDLQ() {
+    setConfirmMessage(message);
 
-    const confirmed = window.confirm(
-        "Clear the entire Dead Letter Queue?"
+    setConfirmAction(() => action);
+
+    setConfirmOpen(true);
+}
+    async function clearDLQConfirmed(){
+
+setClearingDLQ(true);
+
+try{
+
+await clearDLQ();
+
+showSuccess("Dead Letter Queue cleared.");
+
+await loadDLQ();
+
+}
+catch{
+
+showError("Unable to clear DLQ.");
+
+}
+finally{
+
+setClearingDLQ(false);
+
+}
+
+}
+
+function handleClearDLQ() {
+
+    openConfirm(
+        "Clear Dead Letter Queue",
+        "Remove every failed job from the DLQ?",
+        () => {
+            void clearDLQConfirmed();
+        }
     );
-
-    if (!confirmed) return;
-
-    await clearDLQ();
-
-    await loadDLQ();
 
 }
 
@@ -89,13 +154,34 @@ const [selectedUserJobs, setSelectedUserJobs] =
     }
 }
 
-async function handleDeleteUser(id: string) {
-    if (!window.confirm("Delete this user?"))
-        return;
+async function deleteUserConfirmed(id: string) {
 
-    await deleteUser(id);
+    try {
 
-    loadUsers();
+        await deleteUser(id);
+
+        showSuccess("User deleted.");
+
+        loadUsers();
+
+    } catch {
+
+        showError("Unable to delete user.");
+
+    }
+
+}
+
+function handleDeleteUser(id: string) {
+
+    openConfirm(
+        "Delete User",
+        "Delete this user and all associated data?",
+        () => {
+            void deleteUserConfirmed(id);
+        }
+    );
+
 }
 
 async function handleViewJobs(id: string) {
@@ -108,7 +194,7 @@ async function handleViewJobs(id: string) {
     try {
         const result = await getJobs({
             search:
-                search || undefined,
+                debouncedSearch || undefined,
 
             status:
                 statusFilter || undefined,
@@ -120,6 +206,17 @@ async function handleViewJobs(id: string) {
         });
 
         setJobs(result.data);
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+async function loadStatistics() {
+    try {
+        const result =
+            await getStatistics();
+
+        setStatistics(result.data);
     } catch (err) {
         console.log(err);
     }
@@ -137,21 +234,76 @@ async function loadDLQ() {
 }
 async function handleRetry(id: string) {
 
-    await retryDLQJob(id);
+    try{
+        await retryDLQJob(id);
+        showSuccess("Job sent back to queue.");
+        await loadDLQ();
 
-    await loadDLQ();
+        await loadJobs();
+        await loadStatistics();
+    } catch (err) {
+        console.log(err);
+        showError("Retry Failed");
+    }
 
-    await loadJobs();
+}
+async function deleteDLQConfirmed(id: string) {
+
+    try {
+
+        await deleteDLQJob(id);
+
+        showSuccess("Failed job removed.");
+
+        await loadDLQ();
+
+    } catch {
+
+        showError("Unable to delete.");
+
+    }
 
 }
 
+function handleDeleteDLQ(id: string) {
+
+    openConfirm(
+        "Delete Failed Job",
+        "Delete this failed job from the Dead Letter Queue?",
+        () => {
+            void deleteDLQConfirmed(id);
+        }
+    );
+
+}
+useEffect(()=>{
+
+const timer=setTimeout(()=>{
+
+setDebouncedSearch(search);
+
+},500);
+
+return ()=>clearTimeout(timer);
+
+},[search]);
+
     useEffect(() => {
     const fetchJobs = async () => {
+        setPageLoading(true);
         await Promise.all([
     loadJobs(),
     loadUsers(),
     loadDLQ(),
+    loadStatistics(),
 ]);
+setPageLoading(false);
+socket.on("jobUpdated", async () => {
+    await Promise.all([
+        loadJobs(),
+        loadDLQ(),
+    ]);
+});
     };
 
     fetchJobs();
@@ -160,12 +312,17 @@ async function handleRetry(id: string) {
     const interval = setInterval(() => {
         void loadJobs();
 void loadDLQ();
+void loadStatistics();
     }, 3000);
+    
+    return () => {
+    clearInterval(interval);
 
-    return () => clearInterval(interval);
+    socket.off("jobUpdated");
+};
 
 },  [
-    search,
+    debouncedSearch,
     statusFilter,
     priorityFilter,
     sort,
@@ -174,22 +331,23 @@ void loadDLQ();
     async function handleCreate(
     e: React.FormEvent
 ) {
-    
     e.preventDefault();
 
     setLoading(true);
 
     try {
         await createJob({
-    title,
-    description,
-    priority,
-    delay:
-        delay === ""
-            ? 0
-            : Number(delay) * 1000,
-    image,
-});
+            title,
+            description,
+            priority,
+            delay:
+                delay === ""
+                    ? 0
+                    : Number(delay) * 1000,
+            image,
+        });
+
+        showSuccess("Job created successfully.");
 
         setTitle("");
         setDescription("");
@@ -198,52 +356,88 @@ void loadDLQ();
         setImage("mountain.jpg");
 
         await loadJobs();
-
+    } catch {
+        showError("Failed to create job.");
     } finally {
         setLoading(false);
     }
 }
 
-    async function handleDelete(id: string) {
+    async function deleteJobConfirmed(id: string) {
+    try {
+        await deleteJob(id);
 
-    const confirmed = window.confirm(
-        "Delete this job?"
-    );
+        showSuccess("Job deleted.");
 
-    if (!confirmed) return;
+        await loadJobs();
+        await loadStatistics();
 
-    await deleteJob(id);
+    } catch {
 
-    await loadJobs();
+        showError("Unable to delete job.");
+
+    }
 }
-async function handleDeleteAll() {
 
-    const confirmed = window.confirm(
-        "Delete all jobs?"
+function handleDelete(id: string) {
+
+    openConfirm(
+        "Delete Job",
+        "Are you sure you want to delete this job?",
+        () => {
+            void deleteJobConfirmed(id);
+        }
     );
 
-    if (!confirmed) return;
-
+}
+async function deleteAllConfirmed() {
+setDeletingAll(true);
     try {
 
         await deleteAllJobs();
 
+        showSuccess("Jobs deleted.");
+
         await loadJobs();
+        await loadStatistics();
 
-    } catch (err) {
+    } catch {
 
-        console.log(err);
-
-        alert("Failed to delete jobs");
+        showError("Failed to delete jobs.");
 
     }
+finally{
+
+setDeletingAll(false);
+
+}
+}
+
+function handleDeleteAll() {
+
+    openConfirm(
+        "Delete All Jobs",
+        "This will permanently delete all jobs. Continue?",
+        () => {
+            void deleteAllConfirmed();
+        }
+    );
+
 }
 
     function logout() {
         localStorage.removeItem("token");
         window.location.href = "/";
     }
-
+if (pageLoading) {
+    return (
+        <div className="min-h-screen flex justify-center items-center">
+            <div className="text-xl font-semibold animate-pulse">
+                Loading Dashboard...
+            </div>
+        </div>
+    );
+}
     return (
         <div className="min-h-screen bg-gray-100 p-8">
     <div className="max-w-5xl mx-auto">
@@ -284,6 +478,7 @@ async function handleDeleteAll() {
     <div className="flex gap-2 mb-5">
 
     <input
+    disabled={loading}
         className="border rounded-lg p-3 flex-1"
         placeholder="Search jobs..."
         value={search}
@@ -310,6 +505,7 @@ async function handleDeleteAll() {
     <div className="grid grid-cols-3 gap-4">
 
         <select
+        disabled={loading}
             className="border rounded-lg p-3"
             value={statusFilter}
             onChange={(e) =>
@@ -339,6 +535,7 @@ async function handleDeleteAll() {
         </select>
 
         <select
+        disabled={loading}
             className="border rounded-lg p-3"
             value={priorityFilter}
             onChange={(e) =>
@@ -366,6 +563,7 @@ async function handleDeleteAll() {
         </select>
 
         <select
+        disabled={loading}
             className="border rounded-lg p-3"
             value={sort}
             onChange={(e) =>
@@ -386,19 +584,59 @@ async function handleDeleteAll() {
 
 </div>
 
-{/*<select>
+<div className="grid grid-cols-5 gap-4 mb-8">
 
-mountain.jpg
+    <div className="bg-white rounded-xl shadow-md p-5 text-center">
+        <p className="text-gray-500 text-sm">
+            Total Jobs
+        </p>
 
-forest.jpg
+        <h2 className="text-3xl font-bold">
+            {statistics.total}
+        </h2>
+    </div>
 
-cat.jpg
+    <div className="bg-yellow-50 rounded-xl shadow-md p-5 text-center">
+        <p className="text-yellow-700 text-sm">
+            Pending
+        </p>
 
-car.jpg
+        <h2 className="text-3xl font-bold text-yellow-700">
+            {statistics.pending}
+        </h2>
+    </div>
 
-dog.jpg
+    <div className="bg-blue-50 rounded-xl shadow-md p-5 text-center">
+        <p className="text-blue-700 text-sm">
+            Running
+        </p>
 
-</select>*/}
+        <h2 className="text-3xl font-bold text-blue-700">
+            {statistics.running}
+        </h2>
+    </div>
+
+    <div className="bg-green-50 rounded-xl shadow-md p-5 text-center">
+        <p className="text-green-700 text-sm">
+            Completed
+        </p>
+
+        <h2 className="text-3xl font-bold text-green-700">
+            {statistics.completed}
+        </h2>
+    </div>
+
+    <div className="bg-red-50 rounded-xl shadow-md p-5 text-center">
+        <p className="text-red-700 text-sm">
+            Failed
+        </p>
+
+        <h2 className="text-3xl font-bold text-red-700">
+            {statistics.failed}
+        </h2>
+    </div>
+
+</div>
 
             <form
     onSubmit={handleCreate}
@@ -410,6 +648,7 @@ dog.jpg
     </h2>
 
     <input
+    disabled={loading}
         className="border rounded-lg w-full p-3 mb-4"
         placeholder="Title"
         value={title}
@@ -417,6 +656,7 @@ dog.jpg
     />
 
     <input
+    disabled={loading}
         className="border rounded-lg w-full p-3 mb-4"
         placeholder="Description"
         value={description}
@@ -428,6 +668,7 @@ dog.jpg
     Select Image
 </label>
     <select
+    disabled={loading}
     className="border rounded-lg w-full p-3 mb-4"
     value={image}
     onChange={(e) => setImage(e.target.value)}
@@ -439,6 +680,7 @@ dog.jpg
     <option value="car.jpg">Car</option>
 </select>
     <select
+    disabled={loading}
     className="border rounded-lg w-full p-3 mb-4"
     value={priority}
     onChange={(e) =>
@@ -463,6 +705,7 @@ dog.jpg
     </option>
 </select>
 <input
+disabled={loading}
     type="number"
     min={0}
     placeholder="Delay (seconds)"
@@ -500,12 +743,21 @@ dog.jpg
         </span>
 
         <button
+        disabled={deletingAll}
             onClick={handleDeleteAll}
             className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg"
         >
-            {user.role === "ADMIN"
-    ? "Delete All Jobs"
-    : "Delete My Jobs"}
+            {
+deletingAll
+?
+"Deleting..."
+:
+user.role==="ADMIN"
+?
+"Delete All Jobs"
+:
+"Delete My Jobs"
+}
         </button>
 
     </div>
@@ -515,9 +767,17 @@ dog.jpg
             
             {jobs.length === 0 ? (
 
-    <div className="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
-        No jobs found.
-    </div>
+    <div className="bg-white rounded-xl shadow-md p-10 text-center">
+
+<h3 className="text-xl font-semibold">
+No Jobs Found
+</h3>
+
+<p className="text-gray-500 mt-2">
+Create a new job to start processing.
+</p>
+
+</div>
 
 ) : (
             
@@ -541,7 +801,7 @@ dog.jpg
 
         {users.length === 0 ? (
             <div className="bg-white rounded-xl shadow-md p-6">
-                No users found.
+                No users registered.
             </div>
         ) : (
             users.map((u) => (
@@ -581,10 +841,17 @@ dog.jpg
     </h2>
 
     <button
+    disabled={clearingDLQ}
         onClick={handleClearDLQ}
         className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
     >
-        Clear DLQ
+        {
+clearingDLQ
+?
+"Clearing..."
+:
+"Clear DLQ"
+}
     </button>
 
 </div>
@@ -593,7 +860,11 @@ dog.jpg
 
     <div className="bg-white rounded-xl shadow-md p-6 text-gray-500">
 
-        No failed jobs.
+        <h3>No Failed Jobs 🎉</h3>
+
+<p>
+Everything is running smoothly.
+</p>
 
     </div>
 
@@ -605,6 +876,7 @@ dog.jpg
             key={job.id}
             job={job}
             onRetry={handleRetry}
+            onDelete={handleDeleteDLQ}
         />
 
     ))
@@ -620,6 +892,16 @@ dog.jpg
     Built with React • Express • BullMQ • Redis • PostgreSQL
 
 </footer>
+<ConfirmationModal
+    open={confirmOpen}
+    title={confirmTitle}
+    message={confirmMessage}
+    onCancel={() => setConfirmOpen(false)}
+    onConfirm={() => {
+        confirmAction();
+        setConfirmOpen(false);
+    }}
+/>
         </div>
         
     );

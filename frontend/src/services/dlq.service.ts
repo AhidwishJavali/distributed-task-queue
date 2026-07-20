@@ -24,3 +24,12 @@ export async function clearDLQ() {
 
     return response.data;
 }
+export async function deleteDLQJob(
+    id: string
+) {
+    const response = await api.delete(
+        `/dlq/${id}`
+    );
+
+    return response.data;
+}

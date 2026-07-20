@@ -101,6 +101,46 @@ class DLQService {
 
         return dbJob;
     }
+
+    async delete(
+    jobId: string,
+    userId: string,
+    role: "USER" | "ADMIN"
+) {
+    const jobs = await deadLetterQueue.getJobs([
+        "waiting",
+        "active",
+        "completed",
+        "failed",
+    ]);
+
+    const failedJob = jobs.find(
+        (j) => String(j.id) === jobId
+    );
+
+    if (!failedJob) {
+        throw new Error("DLQ job not found");
+    }
+
+    const dbJob =
+        await jobRepository.findByIdForUser(
+            failedJob.data.jobId,
+            userId,
+            role
+        );
+
+    if (!dbJob) {
+        await failedJob.remove();
+        return;
+    }
+
+    await failedJob.remove();
+
+    return {
+        success: true,
+    };
+}
+
     async clear(
     userId: string,
     role: "USER" | "ADMIN"

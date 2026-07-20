@@ -53,6 +53,10 @@ router.get("/", (req, res, next) =>
     jobController.getAllJobs(req as AuthRequest, res, next)
 );
 
+router.get(
+    "/statistics",
+    (req, res, next) => jobController.getStatistics(req as AuthRequest, res, next)
+);
 /**
  * @swagger
  * /jobs/{id}:

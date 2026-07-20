@@ -5,6 +5,7 @@ import deadLetterQueue from "../queues/dead-letter.queue";
 import redisConfig from "../config/redis";
 import jobLogService from "../services/jobLog.service";
 import imageProcessingService from "../services/imageProcessing.service";
+//import { getIO } from "../config/socket";
 const WORKER_NAME = process.env.WORKER_NAME || "Worker";
 const worker = new Worker(
   "jobs",
@@ -12,6 +13,17 @@ const worker = new Worker(
     const { jobId } = job.data;
 
 const dbJob = await jobRepository.findById(jobId);
+if (!dbJob) {
+    console.log("\n==============================");
+    console.log("⚠️ Stale Queue Job Detected");
+    console.log(`BullMQ ID   : ${job.id}`);
+    console.log(`Database ID : ${jobId}`);
+    console.log("Reason      : Database record no longer exists.");
+    console.log("Removing stale queue job...");
+    console.log("==============================\n");
+
+    return;
+}
 let image = await imageProcessingService.loadImage(
     dbJob!.image
 );
@@ -30,6 +42,7 @@ async function runStage(
         stage,
         WORKER_NAME
     );
+    //getIO().emit("jobUpdated");
     await jobLogService.addLog(
     jobId,
     `${stage} (${progress}%)`
@@ -47,17 +60,7 @@ async function runStage(
         );
     }
 }
-if (!dbJob) {
-    console.log("\n==============================");
-    console.log("⚠️ Stale Queue Job Detected");
-    console.log(`BullMQ ID   : ${job.id}`);
-    console.log(`Database ID : ${jobId}`);
-    console.log("Reason      : Database record no longer exists.");
-    console.log("Removing stale queue job...");
-    console.log("==============================\n");
 
-    return;
-}
 
 console.log("\n==============================");
 console.log(`🚀 ${WORKER_NAME} Processing New Job`);
@@ -187,6 +190,7 @@ await runStage(
 }
 
         await jobRepository.updateStatus(jobId, "COMPLETED");
+        //getIO().emit("jobUpdated");
         await jobRepository.updateProgress(
     jobId,
     100,
@@ -257,10 +261,12 @@ worker.on("failed", async (job, err) => {
         error: err.message,
         failedAt: new Date(),
     });
+    //getIO().emit("jobUpdated");
 
     console.log("💀 Job permanently moved to DLQ.");
 }else {
         console.log("🔄 BullMQ will retry...");
+        //getIO().emit("jobUpdated");
         await jobLogService.addLog(
     job.data.jobId,
     `Retry ${job.attemptsMade} scheduled`
