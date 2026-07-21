@@ -1,27 +1,25 @@
 # Distributed Task Queue
 
-A production-inspired distributed task queue system that processes image-processing jobs asynchronously using **BullMQ**, **Redis**, **PostgreSQL**, and **React**. The application supports multiple workers, delayed execution, priority-based scheduling, Dead Letter Queue (DLQ) handling, progress tracking, and real-time job monitoring.
+A distributed task queue built with Node.js, Express, BullMQ, Redis, PostgreSQL, React, and Docker.
 
----
+The application allows users to create image-processing jobs with configurable priority and delay. Jobs are processed asynchronously by multiple workers, progress is tracked in real time, failed jobs are moved to a Dead Letter Queue (DLQ), and can be retried later.
 
-## Features
-
-- Asynchronous job processing with BullMQ
-- Multiple concurrent workers
-- Priority-based scheduling (High, Medium, Low)
-- Delayed job execution
-- Image processing pipeline using Sharp
-- Job progress tracking
-- Processing logs for every job
-- Dead Letter Queue (DLQ) with retry and delete support
-- Search, filtering, and sorting
-- Dashboard with job statistics
-- Responsive React frontend
-- PostgreSQL persistence using Prisma ORM
+The main goal of the project was to demonstrate a distributed task queue architecture. I used image processing as the workload because it's CPU-intensive and makes it easy to visualize asynchronous processing, retries, worker distribution, and the Dead Letter Queue.
 
 ---
 
 ## Tech Stack
+
+### Backend
+
+- Node.js
+- Express
+- TypeScript
+- PostgreSQL
+- Prisma ORM
+- Redis
+- BullMQ
+- Sharp
 
 ### Frontend
 
@@ -31,182 +29,173 @@ A production-inspired distributed task queue system that processes image-process
 - Tailwind CSS
 - Axios
 
-### Backend
+### DevOps
 
-- Node.js
-- Express
-- TypeScript
-- BullMQ
-- Redis
-- PostgreSQL
-- Prisma ORM
-- Sharp
+- Docker
+- Docker Compose
 
 ---
 
-## System Architecture
+## Features
 
-```text
-             +----------------------+
-             |   React Frontend     |
-             +----------+-----------+
-                        |
-                    REST APIs
-                        |
-             +----------v-----------+
-             |   Express Backend    |
-             +----------+-----------+
-                        |
-                Create / Manage Jobs
-                        |
-                 +------v------+
-                 |   BullMQ    |
-                 +------+------+
-                        |
-                     Redis Queue
-                        |
-        +---------------+---------------+
-        |               |               |
-   Worker-1        Worker-2        Worker-3
-        |               |               |
-        +------- Image Processing ------+
-                        |
-                 PostgreSQL (Prisma)
-                        |
-               Job Status & Job Logs
-                        |
-               Dead Letter Queue (DLQ)
-```
+- Create image-processing jobs
+- Edit pending jobs
+- Delete individual jobs
+- Delete all jobs
+- Job priority (High, Medium, Low)
+- Delayed job execution
+- Search jobs
+- Filter by status
+- Filter by priority
+- Sort by newest or oldest
+- Live progress tracking
+- Worker assignment display
+- Processing stage tracking
+- Job execution logs
+- Dead Letter Queue (DLQ)
+- Retry failed jobs
+- Delete individual failed jobs
+- Clear entire DLQ
+- Dashboard statistics
+- Image processing using Sharp
+- Multiple worker processes
+- Fully containerized using Docker
 
 ---
 
 ## Project Structure
 
-```text
-distributed-task-queue
-│
-├── backend
-│   ├── src
-│   │   ├── controllers
-│   │   ├── services
-│   │   ├── repositories
-│   │   ├── routes
-│   │   ├── workers
-│   │   ├── queues
-│   │   ├── config
-│   │   └── utils
-│
-├── frontend
-│   ├── src
-│   │   ├── components
-│   │   ├── pages
-│   │   ├── services
-│   │   ├── types
-│   │   └── utils
-│
-└── README.md
 ```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js
-- PostgreSQL
-- Redis
-- npm
-
-### Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/AhidwishJavali/distributed-task-queue.git
-cd distributed-task-queue
+distributed-task-queue/
+│
+├── backend/
+│   ├── src/
+│   ├── prisma/
+│   └── Dockerfile
+│
+├── frontend/
+│   ├── src/
+│   └── Dockerfile
+│
+└── docker-compose.yml
 ```
-
-Install dependencies:
-
-```bash
-cd backend
-npm install
-
-cd ../frontend
-npm install
-```
-
-Configure the backend `.env` file with your PostgreSQL and Redis credentials.
 
 ---
 
 ## Running the Project
 
-### Start Backend
+### Clone the repository
 
 ```bash
-cd backend
-npm run dev
+git clone <repository-url>
+cd distributed-task-queue
 ```
 
-### Start Workers
+### Build the containers
 
 ```bash
-npm run worker1
-npm run worker2
-npm run worker3
+docker compose build
 ```
 
-### Start Dead Letter Queue Worker
+### Start the application
 
 ```bash
-npm run dlq-worker
+docker compose up
 ```
 
-### Start Frontend
+The application will start:
 
-```bash
-cd frontend
-npm run dev
+| Service     | URL                   |
+| ----------- | --------------------- |
+| Frontend    | http://127.0.0.1:4173 |
+| Backend API | http://127.0.0.1:5000 |
+
+---
+
+## Docker Services
+
+The project runs the following containers:
+
+- Frontend
+- Backend API
+- PostgreSQL
+- Redis
+- Worker 1
+- Worker 2
+- Worker 3
+- DLQ Worker
+
+---
+
+## Job Lifecycle
+
+```
+Create Job
+      │
+      ▼
+ PostgreSQL
+      │
+      ▼
+ BullMQ Queue
+      │
+      ▼
+ Worker
+      │
+ ┌────┴────┐
+ │         │
+ ▼         ▼
+Success   Failure
+ │         │
+ ▼         ▼
+Completed  Dead Letter Queue
+              │
+              ▼
+           Retry Job
 ```
 
 ---
 
-## API Overview
+## Image Processing
 
-### Jobs
+Each job processes one of the sample images included with the project.
 
-- Create Job
-- Get All Jobs
-- Get Job by ID
-- Update Pending Job
-- Delete Job
-- Delete All Jobs
-- Get Job Statistics
-- Get Job Logs
+The worker:
 
-### Dead Letter Queue
+- reads the input image
+- resizes it
+- converts it to grayscale
+- saves the processed image
+- updates the job status and progress
 
-- View Failed Jobs
-- Retry Failed Job
-- Delete Failed Job
-- Clear DLQ
+Both the original and processed images can be viewed from the dashboard.
 
 ---
 
-## Future Improvements
+## Environment Variables
 
-- Docker Compose support
-- Authentication and user management
-- Deployment on cloud platforms
-- WebSocket-based live updates
-- Job cancellation support
+### Backend
+
+```
+PORT=5000
+
+DATABASE_URL=postgresql://...
+
+REDIS_HOST=redis
+
+REDIS_PORT=6379
+```
+
+### Frontend
+
+```
+VITE_API_URL=http://127.0.0.1:5000/api
+```
 
 ---
 
-## Author
+## Notes
 
-**Ahidwish Javali**
-
-GitHub: https://github.com/AhidwishJavali
+- PostgreSQL stores all job data.
+- Redis is used only for queue management.
+- Processed images are stored in a shared Docker volume.
+- The project is designed to run entirely through Docker Compose.
