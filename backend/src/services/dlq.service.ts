@@ -85,7 +85,7 @@ class DLQService {
             {
                 attempts: 3,
                 priority:
-                    priorityMap[dbJob.priority],
+                    priorityMap[dbJob.priority as keyof typeof priorityMap],
             }
         );
 

@@ -167,12 +167,12 @@ async function handleLogs() {
                         {job.title}
                     </h3>
                     <img
-    src={`http://localhost:5000/images/${job.image}`}
+   src={`http://127.0.0.1:5000/images/${job.image}`}
     alt={job.title}
     className="w-48 h-32 object-cover rounded-lg mt-4 border cursor-pointer hover:scale-105 transition"
     onClick={() =>
         setPreviewImage(
-            `http://localhost:5000/images/${job.image}`
+            `http://127.0.0.1:5000/images/${job.image}`
         )
     }
 />
@@ -183,12 +183,12 @@ async function handleLogs() {
         </p>
 
         <img
-    src={`http://localhost:5000/processed-images/${job.processedImage}`}
+    src={`http://127.0.0.1:5000/processed-images/${job.processedImage}`}
     alt="Processed"
     className="w-48 h-32 object-cover rounded-lg mt-2 border border-green-500 cursor-pointer hover:scale-105 transition"
     onClick={() =>
         setPreviewImage(
-            `http://localhost:5000/processed-images/${job.processedImage}`
+            `http://127.0.0.1:5000/processed-images/${job.processedImage}`
         )
     }
 />

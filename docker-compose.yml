@@ -1,4 +1,4 @@
-version: "3.9"
+
 
 services:
   postgres:
@@ -33,18 +33,85 @@ services:
       - "5000:5000"
     env_file:
       - ./backend/.env
+    volumes:
+    - processed-images:/app/output
 
   frontend:
-    build:
-      context: ./frontend
+    build: ./frontend
+    ports:
+      - "4173:4173"
     container_name: taskqueue-frontend
     restart: always
     depends_on:
       - backend
-    ports:
-      - "5173:80"
     env_file:
       - ./frontend/.env.docker
 
+
+
+  worker1:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: taskqueue-worker1
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./backend/.env
+    environment:
+      WORKER_NAME: Worker-1
+    volumes:
+    - processed-images:/app/output
+
+  worker2:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: taskqueue-worker2
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./backend/.env
+    environment:
+      WORKER_NAME: Worker-2
+    volumes:
+    - processed-images:/app/output
+
+  worker3:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+    container_name: taskqueue-worker3
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./backend/.env
+    environment:
+      WORKER_NAME: Worker-3
+    volumes:
+    - processed-images:/app/output
+
+  dlq-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+
+    command: npm run start-dlq-worker
+
+    restart: always
+
+    depends_on:
+      - postgres
+      - redis
+
+    env_file:
+      - ./backend/.env
 volumes:
   postgres-data:
+  processed-images:

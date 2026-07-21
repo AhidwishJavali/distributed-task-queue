@@ -145,7 +145,7 @@ async function loadStatistics() {
     try {
         const result =
             await getStatistics();
-
+        
         setStatistics(result.data);
     } catch (err) {
         console.log(err);

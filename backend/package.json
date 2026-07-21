@@ -4,15 +4,23 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "worker": "tsx watch src/workers/job.worker.ts",
-    "worker1": "cross-env WORKER_NAME=Worker-1 tsx watch src/workers/job.worker.ts",
-    "worker2": "cross-env WORKER_NAME=Worker-2 tsx watch src/workers/job.worker.ts",
-    "worker3": "cross-env WORKER_NAME=Worker-3 tsx watch src/workers/job.worker.ts",
-    "dlq-worker": "tsx watch src/workers/dlq.worker.ts",
-    "build": "tsc",
-    "start": "prisma migrate deploy && node dist/server.js"
-  },
+  "dev": "tsx watch src/server.ts",
+
+  "worker": "tsx watch src/workers/job.worker.ts",
+  "worker1": "cross-env WORKER_NAME=Worker-1 tsx watch src/workers/job.worker.ts",
+  "worker2": "cross-env WORKER_NAME=Worker-2 tsx watch src/workers/job.worker.ts",
+  "worker3": "cross-env WORKER_NAME=Worker-3 tsx watch src/workers/job.worker.ts",
+
+  "dlq-worker": "tsx watch src/workers/dlq.worker.ts",
+
+  "build": "tsc",
+
+  "start": "prisma migrate deploy && node dist/server.js",
+
+  "start-worker": "node dist/workers/job.worker.js",
+
+  "start-dlq-worker": "node dist/workers/dlq.worker.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
