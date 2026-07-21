@@ -84,6 +84,13 @@ distributed-task-queue/
 
 ## Running the Project
 
+## Prerequisites
+
+Before running the project, make sure the following are installed:
+
+- Git
+- Docker Desktop (Docker Engine + Docker Compose)
+
 ### Clone the repository
 
 ```bash
@@ -126,6 +133,10 @@ The project runs the following containers:
 - DLQ Worker
 
 ---
+
+## Note
+
+The project is intended to run entirely through Docker Compose. Starting the application automatically launches the frontend, backend, PostgreSQL, Redis, worker processes, and the DLQ worker.
 
 ## Job Lifecycle
 
