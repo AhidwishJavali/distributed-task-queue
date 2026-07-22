@@ -51,7 +51,10 @@ services:
       - processed-images:/app/output
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://127.0.0.1:5000/api
     ports:
       - "4173:4173"
     container_name: taskqueue-frontend
