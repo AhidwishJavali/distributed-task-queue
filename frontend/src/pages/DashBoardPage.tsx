@@ -123,43 +123,36 @@ function handleClearDLQ() {
     async function loadJobs() {
     try {
         const result = await getJobs({
-            search:
-                debouncedSearch || undefined,
-
-            status:
-                statusFilter || undefined,
-
-            priority:
-                priorityFilter || undefined,
-
+            search: debouncedSearch || undefined,
+            status: statusFilter || undefined,
+            priority: priorityFilter || undefined,
             sort,
         });
 
-        setJobs(result.data);
+        setJobs(result?.data ?? []);
     } catch (err) {
-        console.log(err);
+        console.error(err);
     }
 }
 
 async function loadStatistics() {
     try {
-        const result =
-            await getStatistics();
-        
-        setStatistics(result.data);
+        const result = await getStatistics();
+
+        if (result?.data) {
+            setStatistics(result.data);
+        }
     } catch (err) {
-        console.log(err);
+        console.error(err);
     }
 }
 async function loadDLQ() {
     try {
-        const result =
-            await getDLQJobs();
+        const result = await getDLQJobs();
 
-        setDLQJobs(result.data);
-
+        setDLQJobs(result?.data ?? []);
     } catch (err) {
-        console.log(err);
+        console.error(err);
     }
 }
 async function handleRetry(id: string) {

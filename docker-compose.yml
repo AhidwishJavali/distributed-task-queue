@@ -1,5 +1,10 @@
 services:
   postgres:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     image: postgres:16-alpine
     container_name: taskqueue-postgres
     restart: always
@@ -11,8 +16,14 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+  
 
   redis:
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     image: redis:7-alpine
     container_name: taskqueue-redis
     restart: always
@@ -25,8 +36,10 @@ services:
     container_name: taskqueue-backend
     restart: always
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "5000:5000"
     environment:
@@ -55,8 +68,10 @@ services:
     container_name: taskqueue-worker1
     restart: always
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:javali123@postgres:5432/task_queue_db?schema=public
       REDIS_HOST: redis
@@ -73,8 +88,10 @@ services:
     container_name: taskqueue-worker2
     restart: always
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:javali123@postgres:5432/task_queue_db?schema=public
       REDIS_HOST: redis
@@ -91,8 +108,10 @@ services:
     container_name: taskqueue-worker3
     restart: always
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:javali123@postgres:5432/task_queue_db?schema=public
       REDIS_HOST: redis
@@ -112,8 +131,10 @@ services:
     restart: always
 
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
     environment:
       DATABASE_URL: postgresql://postgres:javali123@postgres:5432/task_queue_db?schema=public
