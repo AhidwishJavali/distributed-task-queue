@@ -90,6 +90,7 @@ Before running the project, make sure the following are installed:
 
 - Git
 - Docker Desktop (Docker Engine + Docker Compose)
+- Start Docker Desktop
 
 ### Clone the repository
 
